@@ -1,0 +1,71 @@
+.botones > div {
+  gap: 15px;
+}
+.botones .boton.activo figure:nth-child(1) {
+  display: none;
+}
+.botones .boton.activo figure:nth-child(2) {
+  display: block !important;
+}
+.botones .boton.activo .kt-inside-inner-col {
+  border-top: 1px solid #f96302;
+  border-right: 1px solid #f96302;
+  border-bottom: 1px solid #f96302;
+  border-left: 1px solid #f96302;
+}
+.botones .boton .kt-inside-inner-col {
+  height: 65px;
+  cursor: pointer;
+}
+.botones .boton .kt-inside-inner-col figure {
+  margin-bottom: 0;
+}
+.botones .boton .kt-inside-inner-col figure:nth-child(2) {
+  display: none;
+}
+.botones .boton .kt-inside-inner-col:hover figure:nth-child(1) {
+  display: none;
+}
+.botones .boton .kt-inside-inner-col:hover figure:nth-child(2) {
+  display: block !important;
+}
+.botones img {
+  display: block;
+}
+
+.subseccion {
+  display: none !important;
+}
+.subseccion p {
+  max-width: 835px;
+}
+.subseccion.activo {
+  display: -webkit-box !important;
+  display: -ms-flexbox !important;
+  display: flex !important;
+}
+
+.botones img {
+  display: block;
+}
+.botones .kt-row-column-wrap {
+  gap: 15px;
+}
+.botones div .kt-inside-inner-col {
+  height: 145px;
+}
+.botones .wp-block-kadence-column:hover {
+  cursor: pointer;
+}
+.botones .kt-inside-inner-col figure {
+  margin-bottom: 0px;
+}
+.botones .kt-inside-inner-col figure:nth-child(2) {
+  display: none;
+}
+.botones .kt-inside-inner-col:hover figure:nth-child(1) {
+  display: none;
+}
+.botones .kt-inside-inner-col:hover figure:nth-child(2) {
+  display: block;
+}

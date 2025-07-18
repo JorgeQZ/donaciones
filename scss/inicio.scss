@@ -1,0 +1,103 @@
+@import "variables";
+@import "fonts"; // Importación del los estilos de fonts a general.
+
+.slider {
+    .kt-blocks-carousel-init {
+        margin-bottom: 0px !important;
+    }
+
+    .kb-splide .splide__pagination,
+    .kb-splide ul.splide__pagination.splide__pagination {
+        bottom: 35px;
+        gap: 5px;
+    }
+
+    .kt-blocks-carousel .kt-carousel-dotstyle-light .splide__pagination__page,
+    .kt-blocks-carousel .kt-carousel-dotstyle-light .splide__pagination__page.is-active {
+        opacity: 1;
+        background-color: white;
+        border: solid 1px white;
+    }
+
+    .kt-blocks-carousel .kt-carousel-dotstyle-light .splide__pagination__page,
+    .kt-blocks-carousel .kt-carousel-dotstyle-light .splide__pagination__page {
+        opacity: 1;
+        background-color: transparent;
+        border: solid 1px white;
+    }
+}
+
+.titulo {
+    font-family: $ff-blkcn;
+    font-size: 40px;
+    line-height: 40px;
+}
+
+.descripcion {
+    font-family: $ff-ltcn;
+    font-size: 18px;
+}
+
+.imagen img {
+    border-bottom: solid 5px #f96302;
+}
+
+.imagenes-s2 .kt-row-column-wrap {
+    gap: 15px;
+}
+
+.subtitulo {
+    font-family: $ff-blkcn;
+    font-size: 20px;
+}
+
+.inicio-shortcode {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .inputs.dos {
+        margin-top: 50px;
+    }
+
+    .inputs {
+        position: relative;
+
+        p {
+            position: absolute;
+            background-color: white;
+            left: 15px;
+            top: -8px;
+            text-align: center;
+            font-family: $ff-ltcn;
+        }
+
+        .input-1 {
+            width: 40px;
+        }
+
+        .input-2 {
+            width: 80px;
+        }
+
+        input {
+            border: solid 1px;
+            width: 270px;
+            height: 40px;
+            padding: 0px 15px;
+
+            &::placeholder {
+                font-size: 11px;
+                font-family: $ff-ltcn;
+            }
+        }
+    }
+}
+
+.boton {
+    font-family: $ff-bdcn;
+}
+
+.img-hover {
+    width: 100%;
+}

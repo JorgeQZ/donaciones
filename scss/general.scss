@@ -1,0 +1,101 @@
+@import 'header'; // Importación del los estilos del header a general.
+@import 'footer'; // Importación del los estilos del header a general.
+@import "fonts"; // Importación del los estilos de fonts a general.
+@import "variables";
+
+body,
+body * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    transition: $transition_base;
+}
+
+body {
+    font-family: $ff-roman;
+}
+
+.wrapper {
+    margin: 0 auto;
+    width: 90%;
+    max-width: 1200px;
+}
+
+.titulo {
+    font-family: $ff-blkcn;
+    font-size: 40px;
+    line-height: 40px;
+}
+
+.descripcion {
+    font-family: $ff-ltcn;
+    font-size: 18px;
+
+    a {
+        font-family: $ff-blkcn;
+        color: #f96302;
+        text-decoration: underline;
+
+        &:hover {
+            color: #943c01;
+        }
+    }
+
+    strong {
+        font-family: $ff-blkcn;
+    }
+}
+
+.div-slider {
+    position: relative;
+
+    img {
+        width: 100%;
+    }
+
+    .kb-image-has-overlay:after {
+        height: 100%;
+        top: -5.8px;
+    }
+
+    p {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 10;
+        font-family: $ff-blkcn;
+        font-size: 600%;
+        padding: 0;
+        background-color: transparent !important;
+        line-height: 100%;
+
+        @media (min-width: 2000px) {
+            font-size: 1000%;
+            left: 200px;
+        }
+
+        @media (max-width: 1999px) {
+            left: 90px;
+        }
+
+        @media (max-width: 1280px) {
+            font-size: 500%;
+            left: 80px;
+        }
+
+        @media (max-width: 900px) {
+            font-size: 400%;
+            left: 90px;
+        }
+
+        @media (max-width: 600px) {
+            font-size: 260%;
+            left: 30px;
+        }
+
+        @media (max-width: 375px) {
+            font-size: 240%;
+            left: 5%;
+        }
+    }
+}

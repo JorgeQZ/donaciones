@@ -1,0 +1,118 @@
+.formulario {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+.formulario .titulo {
+  padding: 60px 0px 40px 0px;
+  font-size: 30px;
+}
+.formulario .subtitulo {
+  padding: 20px 0px;
+  font-size: 20px;
+  text-align: center;
+}
+.formulario form > div {
+  padding: 10px 0px;
+  height: 85px;
+}
+.formulario form {
+  width: 50%;
+}
+.formulario form input {
+  margin-top: 2px;
+}
+.formulario form button {
+  margin: 40px 0px 50px 0px;
+  cursor: pointer;
+}
+.formulario form .divtextarea {
+  height: 100px;
+}
+.formulario form input,
+.formulario form select,
+.formulario form textarea,
+.formulario form button {
+  width: 100%;
+  max-width: 100%;
+  padding: 0.75rem;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+  border: 1px solid black;
+}
+.formulario .custom-select {
+  border: 1px solid black;
+  padding: 8px;
+  cursor: pointer;
+  position: relative;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
+}
+.formulario .selected-placeholder {
+  min-height: 24px;
+  padding: 0px 10px;
+  min-height: 24px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -ms-flex-wrap: wrap;
+      flex-wrap: wrap;
+  font-size: 15px;
+  gap: 4px;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+.formulario .custom-options {
+  position: absolute;
+  background: white;
+  border: 1px solid black;
+  width: 100.5%;
+  left: -1px;
+  top: 40px;
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.formulario .custom-options div {
+  padding: 8px;
+}
+.formulario .custom-options div:hover {
+  background: #eee;
+}
+.formulario .hidden {
+  display: none;
+}
+.formulario .tag {
+  background: #ddd;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-right: 4px;
+  margin-bottom: 0px;
+  margin-top: 0px;
+  font-size: 14px;
+  cursor: pointer;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  gap: 6px;
+}
+.formulario .remove-tag {
+  font-weight: bold;
+  cursor: pointer;
+}
+.formulario .hidden {
+  display: none;
+}

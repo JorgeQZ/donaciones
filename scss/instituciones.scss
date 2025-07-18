@@ -1,0 +1,118 @@
+.formulario {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .titulo {
+        padding: 60px 0px 40px 0px;
+        font-size: 30px;
+    }
+
+    .subtitulo {
+        padding: 20px 0px;
+        font-size: 20px;
+        text-align: center;
+    }
+
+    form>div {
+        padding: 10px 0px;
+        height: 85px;
+    }
+
+    form {
+
+        width: 50%;
+
+        input {
+            margin-top: 2px;
+        }
+
+        button {
+            margin: 40px 0px 50px 0px;
+            cursor: pointer;
+        }
+
+        .divtextarea {
+            height: 100px;
+        }
+
+        input,
+        select,
+        textarea,
+        button {
+            width: 100%;
+            max-width: 100%;
+            padding: 0.75rem;
+            box-sizing: border-box;
+            border: 1px solid black;
+        }
+    }
+
+    .custom-select {
+        border: 1px solid black;
+        padding: 8px;
+        cursor: pointer;
+        position: relative;
+        user-select: none;
+    }
+
+    .selected-placeholder {
+        min-height: 24px;
+        padding: 0px 10px;
+        min-height: 24px;
+        display: flex;
+        flex-wrap: wrap;
+        font-size: 15px;
+        gap: 4px;
+        align-items: center;
+    }
+
+    .custom-options {
+        position: absolute;
+        background: white;
+        border: 1px solid black;
+        width: 100.5%;
+        left: -1px;
+        top: 40px;
+        z-index: 10;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .custom-options div {
+        padding: 8px;
+    }
+
+    .custom-options div:hover {
+        background: #eee;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    .tag {
+        background: #ddd;
+        padding: 4px 8px;
+        border-radius: 4px;
+        margin-right: 4px;
+        margin-bottom: 0px;
+        margin-top: 0px;
+        font-size: 14px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .remove-tag {
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+
+}

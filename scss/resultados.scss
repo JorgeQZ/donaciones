@@ -1,0 +1,67 @@
+@import "fonts";
+@import "variables";
+
+.wrapper {
+    figure {
+        display: grid;
+        margin-bottom: 10px !important;
+    }
+
+    .conts {
+        max-width: 900px;
+        margin: 0 auto;
+
+        >div {
+            gap: 15px;
+        }
+
+        .kt-inside-inner-col {
+            width: 290px;
+            height: 201;
+        }
+    }
+
+    .numero {
+        font-family: $ff-blkcn;
+    }
+
+    .cont-num {
+        position: relative;
+
+        .titulolight {
+            font-size: 80px;
+            font-family: $ff-hnlg;
+        }
+
+        .num {
+            position: absolute;
+
+            &.mas {
+                font-family: $ff-hnlg;
+                left: 40px;
+
+                &.lg {
+                    left: 20px;
+                }
+            }
+
+            &.mdp {
+                right: 60px;
+                bottom: 11px;
+
+                &.lg {
+                    right: 20px;
+                }
+            }
+
+            &.signo {
+                left: 90px;
+                top: 20px;
+
+                &.lg {
+                    left: 60px;
+                }
+            }
+        }
+    }
+}

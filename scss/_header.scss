@@ -1,0 +1,165 @@
+@import "variables";
+@import "fonts"; // Importación del los estilos de fonts a general.
+
+header {
+    background-color: $orange;
+    font-family: $ff-bdcn !important;
+
+    .desktop {
+        width: 700px;
+        margin: 0 auto;
+        padding: 40px 0px;
+    }
+
+    .sub_uno {
+        width: 100%;
+        margin: 0 auto;
+        display: none;
+
+        img {
+            width: 300px;
+            padding-bottom: 0px;
+            margin-left: 4px;
+        }
+
+        .hamburger {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 30px;
+            height: 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            z-index: 1000;
+
+            span {
+                display: block;
+                height: 3px;
+                width: 100%;
+                background: white;
+                border-radius: 2px;
+                margin: 3px 0;
+                transition: all 0.3s ease;
+                transform-origin: center;
+            }
+
+            &.open {
+                span {
+                    margin: 1px 0;
+                }
+
+                span:nth-child(1) {
+                    transform: rotate(45deg) translateY(7.2px);
+                }
+
+                span:nth-child(2) {
+                    opacity: 0;
+                }
+
+                span:nth-child(3) {
+                    transform: rotate(-45deg) translateY(-7.2px);
+                }
+            }
+        }
+    }
+
+    .movil {
+        padding: 20px 20px;
+        display: none;
+
+        .nav-movil {
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.4s ease, opacity 0.4s ease;
+            pointer-events: none;
+
+            &.activo {
+                max-height: 500px;
+                opacity: 1;
+                pointer-events: auto;
+            }
+        }
+
+        .menu {
+            flex-direction: column;
+            padding-top: 20px;
+        }
+    }
+
+    img {
+        display: flex;
+        width: 100%;
+        padding-bottom: 30px;
+    }
+
+    .menu {
+        display: flex;
+        justify-content: space-between;
+        list-style: none;
+        width: 98.5%;
+        margin: 0 auto;
+
+        li {
+            a {
+                text-transform: uppercase;
+                color: white;
+                text-decoration: none;
+                outline: none;
+
+                &:hover,
+                &[aria-current="page"] {
+                    color: #943c01;
+                    border-bottom: solid 1px #943c01;
+                    padding-bottom: 5px;
+                }
+
+                &:focus {
+                    outline: none;
+                }
+            }
+        }
+    }
+}
+
+@media (max-width: 768px) {
+
+    header {
+        .movil {
+            display: block;
+
+            li {
+                a {
+
+                    &:hover,
+                    &[aria-current="page"] {
+                        border-bottom: 1px transparent;
+                    }
+                }
+            }
+        }
+
+        .sub_uno {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .desktop {
+            display: none;
+        }
+    }
+}
+
+@media (max-width: 400px) {
+    header {
+        .sub_uno {
+            img {
+                width: 230px;
+            }
+        }
+    }
+}
