@@ -5,6 +5,19 @@ require_once 'inc/inicio.php';
 add_action('wp_enqueue_scripts', function () {
     wp_enqueue_style('general', get_template_directory_uri() . '/css/general.css', [], null);
 
+    // Si es la plantilla admin, quítalo y encola el admin
+    if (is_page_template('page-consulta-inst.php') || is_singular('institucion')) {
+        wp_dequeue_style('general');
+        wp_deregister_style('general');
+
+        wp_enqueue_style('general-admin', get_template_directory_uri() . '/css/general-admin.css', [], null);
+    }
+
+    if (is_singular('institucion')) {
+        wp_enqueue_style('single-inst', get_template_directory_uri() . '/css/single-inst.css', [], null);
+
+    }
+
     $template = basename(get_page_template());
 
     if ($template === 'page-instituciones.php') {
@@ -58,14 +71,16 @@ add_action('wp_enqueue_scripts', function () {
     }
 });
 
-function registro_menus() {
+function registro_menus()
+{
     register_nav_menus(array(
         'menu_header' => 'Menú Header',
     ));
 }
 add_action('init', 'registro_menus');
 
-function cargar_js_header() {
+function cargar_js_header()
+{
     wp_enqueue_script(
         'header-script',
         get_template_directory_uri() . '/js/header.js',
@@ -75,3 +90,16 @@ function cargar_js_header() {
     );
 }
 add_action('wp_enqueue_scripts', 'cargar_js_header');
+
+
+/**
+ * Recargar tabla de instituciones mediante AJAX
+ */
+add_action('wp_ajax_recargar_tabla_instituciones', 'recargar_tabla_instituciones');
+add_action('wp_ajax_nopriv_recargar_tabla_instituciones', 'recargar_tabla_instituciones');
+
+function recargar_tabla_instituciones()
+{
+    get_template_part('templates/tabla-instituciones');
+    wp_die();
+}

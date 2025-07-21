@@ -1,9 +1,25 @@
 <?php
 /**
  * Template Name: Instituciones
-**/
+ **/
 
 get_header();
+
+// Verifica si hay ID en el query
+$institucion_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$institucion = null;
+
+if ($institucion_id) {
+    $institucion = get_post($institucion_id);
+    // Opcional: asegúrate de que sea de tipo 'institucion'
+    if (!$institucion || $institucion->post_type !== 'institucion') {
+        $institucion = null; // No válido
+    }
+}
+
+// Carga campos (ACF o meta)
+$info_general = $institucion ? get_field('informacion_general', $institucion_id) : [];
+$info_contacto = $institucion ? get_field('informacion_de_contacto', $institucion_id) : [];
 ?>
 
 <div class="wrapper">
@@ -242,11 +258,11 @@ get_header();
                 <div class="custom-select" data-name="grupo_social">
                     <div class="selected-placeholder">Seleccione una o más opciones</div>
                     <div class="custom-options hidden">
-                    <div data-value="comunidad">Comunidad</div>
-                    <div data-value="inclusion">Inclusión</div>
-                    <div data-value="jovenes">Jóvenes</div>
-                    <div data-value="mujeres">Mujeres</div>
-                    <div data-value="ninos">Niños(as)</div>
+                        <div data-value="comunidad">Comunidad</div>
+                        <div data-value="inclusion">Inclusión</div>
+                        <div data-value="jovenes">Jóvenes</div>
+                        <div data-value="mujeres">Mujeres</div>
+                        <div data-value="ninos">Niños(as)</div>
                     </div>
                 </div>
                 <input type="hidden" name="grupo_social" required>
@@ -257,11 +273,11 @@ get_header();
                 <div class="custom-select" data-name="sector_apoyo">
                     <div class="selected-placeholder">Seleccione una o más opciones</div>
                     <div class="custom-options hidden">
-                    <div data-value="comunidad">Comunidad</div>
-                    <div data-value="inclusion">Inclusión</div>
-                    <div data-value="jovenes">Jóvenes</div>
-                    <div data-value="mujeres">Mujeres</div>
-                    <div data-value="ninos">Niños(as)</div>
+                        <div data-value="comunidad">Comunidad</div>
+                        <div data-value="inclusion">Inclusión</div>
+                        <div data-value="jovenes">Jóvenes</div>
+                        <div data-value="mujeres">Mujeres</div>
+                        <div data-value="ninos">Niños(as)</div>
                     </div>
                 </div>
                 <input type="hidden" name="sector_apoyo" required>
@@ -333,76 +349,76 @@ get_header();
 
     <script>
         document.querySelectorAll('.custom-select').forEach(selectEl => {
-        const optionsContainer = selectEl.querySelector('.custom-options');
-        const placeholder = selectEl.querySelector('.selected-placeholder');
-        const hiddenInput = selectEl.parentElement.querySelector('input[type="hidden"]');
-        let selected = [];
+            const optionsContainer = selectEl.querySelector('.custom-options');
+            const placeholder = selectEl.querySelector('.selected-placeholder');
+            const hiddenInput = selectEl.parentElement.querySelector('input[type="hidden"]');
+            let selected = [];
 
-        // Abrir/cerrar menú
-        selectEl.addEventListener('click', (e) => {
-        e.stopPropagation();
-        optionsContainer.classList.toggle('hidden');
-        });
-
-        // Cerrar menú globalmente
-        document.addEventListener('click', () => {
-        document.querySelectorAll('.custom-options').forEach(opt => opt.classList.add('hidden'));
-        });
-
-        // Manejar selección
-        function handleOptionClick(optionDiv) {
-        const value = optionDiv.dataset.value;
-        const text = optionDiv.textContent;
-
-        if (!selected.find(s => s.value === value)) {
-            selected.push({ value, text });
-            updateUI();
-        }
-        }
-
-        // Actualizar etiquetas y valores
-        function updateUI() {
-        placeholder.innerHTML = '';
-        selected.forEach(item => {
-            const span = document.createElement('span');
-            span.className = 'tag';
-            span.dataset.value = item.value;
-            span.textContent = item.text;
-
-            const removeBtn = document.createElement('span');
-            removeBtn.className = 'remove-tag';
-            removeBtn.textContent = '×';
-            removeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            selected = selected.filter(s => s.value !== item.value);
-
-            const restored = document.createElement('div');
-            restored.dataset.value = item.value;
-            restored.textContent = item.text;
-            restored.addEventListener('click', () => handleOptionClick(restored));
-            optionsContainer.appendChild(restored);
-
-            updateUI();
+            // Abrir/cerrar menú
+            selectEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                optionsContainer.classList.toggle('hidden');
             });
 
-            span.appendChild(removeBtn);
-            placeholder.appendChild(span);
-        });
+            // Cerrar menú globalmente
+            document.addEventListener('click', () => {
+                document.querySelectorAll('.custom-options').forEach(opt => opt.classList.add('hidden'));
+            });
 
-        hiddenInput.value = selected.map(s => s.value).join(',');
+            // Manejar selección
+            function handleOptionClick(optionDiv) {
+                const value = optionDiv.dataset.value;
+                const text = optionDiv.textContent;
 
-        Array.from(optionsContainer.children).forEach(opt => {
-            if (selected.find(s => s.value === opt.dataset.value)) {
-            opt.remove();
+                if (!selected.find(s => s.value === value)) {
+                    selected.push({ value, text });
+                    updateUI();
+                }
             }
-        });
-        }
 
-        // Inicializar opciones
-        Array.from(optionsContainer.children).forEach(opt => {
-        opt.addEventListener('click', () => handleOptionClick(opt));
+            // Actualizar etiquetas y valores
+            function updateUI() {
+                placeholder.innerHTML = '';
+                selected.forEach(item => {
+                    const span = document.createElement('span');
+                    span.className = 'tag';
+                    span.dataset.value = item.value;
+                    span.textContent = item.text;
+
+                    const removeBtn = document.createElement('span');
+                    removeBtn.className = 'remove-tag';
+                    removeBtn.textContent = '×';
+                    removeBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        selected = selected.filter(s => s.value !== item.value);
+
+                        const restored = document.createElement('div');
+                        restored.dataset.value = item.value;
+                        restored.textContent = item.text;
+                        restored.addEventListener('click', () => handleOptionClick(restored));
+                        optionsContainer.appendChild(restored);
+
+                        updateUI();
+                    });
+
+                    span.appendChild(removeBtn);
+                    placeholder.appendChild(span);
+                });
+
+                hiddenInput.value = selected.map(s => s.value).join(',');
+
+                Array.from(optionsContainer.children).forEach(opt => {
+                    if (selected.find(s => s.value === opt.dataset.value)) {
+                        opt.remove();
+                    }
+                });
+            }
+
+            // Inicializar opciones
+            Array.from(optionsContainer.children).forEach(opt => {
+                opt.addEventListener('click', () => handleOptionClick(opt));
+            });
         });
-    });
     </script>
 
 </div>

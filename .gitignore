@@ -1,0 +1,11 @@
+# Ignorar node_modules
+node_modules/
+
+# Ignorar archivos de configuración de Node.js
+package.json
+package-lock.json
+
+# Opcional: Ignorar dependencias de desarrollo (si usas otros gestores de paquetes o entornos)
+npm-debug.log*
+yarn.lock
+pnpm-lock.yaml

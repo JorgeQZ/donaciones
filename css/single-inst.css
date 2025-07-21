@@ -1,0 +1,331 @@
+@font-face {
+  font-family: "Helvetica Neue LT Std";
+  src: url("../fonts/HelveticaNeueLTStd-Roman.eot");
+  src: url("../fonts/HelveticaNeueLTStd-Roman.eot?#iefix") format("embedded-opentype"), url("../fonts/HelveticaNeueLTStd-Roman.woff2") format("woff2"), url("../fonts/HelveticaNeueLTStd-Roman.woff") format("woff"), url("../fonts/HelveticaNeueLTStd-Roman.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue Light";
+  src: url("../fonts/HelveticaNeueLight.eot");
+  src: url("../fonts/HelveticaNeueLight.eot?#iefix") format("embedded-opentype"), url("../fonts/HelveticaNeueLight.woff2") format("woff2"), url("../fonts/HelveticaNeueLight.woff") format("woff"), url("../fonts/HelveticaNeueLight.ttf") format("truetype");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue LT Std HvCn";
+  src: url("../fonts/HelveticaNeueLTStd-HvCn.eot");
+  src: url("../fonts/HelveticaNeueLTStd-HvCn.eot?#iefix") format("embedded-opentype"), url("../fonts/HelveticaNeueLTStd-HvCn.woff2") format("woff2"), url("../fonts/HelveticaNeueLTStd-HvCn.woff") format("woff"), url("../fonts/HelveticaNeueLTStd-HvCn.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue LT Std Cn";
+  src: url("../fonts/HelveticaNeueLTStd-Cn.eot");
+  src: url("../fonts/HelveticaNeueLTStd-Cn.eot?#iefix") format("embedded-opentype"), url("../fonts/HelveticaNeueLTStd-Cn.woff2") format("woff2"), url("../fonts/HelveticaNeueLTStd-Cn.woff") format("woff"), url("../fonts/HelveticaNeueLTStd-Cn.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue LT Std MdCn";
+  src: url("../fonts/HelveticaNeueLTStd-MdCn.eot");
+  src: url("../fonts/HelveticaNeueLTStd-MdCn.eot?#iefix") format("embedded-opentype"), url("../fonts/HelveticaNeueLTStd-MdCn.woff2") format("woff2"), url("../fonts/HelveticaNeueLTStd-MdCn.woff") format("woff"), url("../fonts/HelveticaNeueLTStd-MdCn.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue LT Std LtCn";
+  src: url("../fonts/HelveticaNeueLTStd-LtCn.eot");
+  src: url("../fonts/HelveticaNeueLTStd-LtCn.eot?#iefix") format("embedded-opentype"), url("../fonts/HelveticaNeueLTStd-LtCn.woff2") format("woff2"), url("../fonts/HelveticaNeueLTStd-LtCn.woff") format("woff"), url("../fonts/HelveticaNeueLTStd-LtCn.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue LT Std BlkCn";
+  src: url("../fonts/HelveticaNeueLTStd-BlkCn.eot");
+  src: url("../fonts/HelveticaNeueLTStd-BlkCn.eot?#iefix") format("embedded-opentype"), url("../fonts/HelveticaNeueLTStd-BlkCn.woff2") format("woff2"), url("../fonts/HelveticaNeueLTStd-BlkCn.woff") format("woff"), url("../fonts/HelveticaNeueLTStd-BlkCn.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue LT Std BdCn";
+  src: url("../fonts/HelveticaNeueLTStd-BdCn.eot");
+  src: url("../fonts/HelveticaNeueLTStd-BdCn.eot?#iefix") format("embedded-opentype"), url("../fonts/HelveticaNeueLTStd-BdCn.woff") format("woff"), url("../fonts/HelveticaNeueLTStd-BdCn.ttf") format("truetype");
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue LT Std Bd";
+  src: url("../fonts/HelveticaNeueLTStd-Bd.eot");
+  src: url("../fonts/HelveticaNeueLTStd-Bd.eot?#iefix") format("embedded-opentype"), url("../fonts/HelveticaNeueLTStd-Bd.woff") format("woff"), url("../fonts/HelveticaNeueLTStd-Bd.ttf") format("truetype");
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+.formulario {
+  font-family: "Helvetica Neue LT Std LtCn";
+}
+.formulario .title-cont {
+  height: auto;
+}
+.formulario .title-cont p {
+  margin: 20px 0;
+}
+.formulario .sub-title {
+  color: #333;
+  margin-bottom: 20px;
+}
+.formulario .sub-title span {
+  display: block;
+  font-weight: bold;
+  color: #666;
+}
+.formulario .row {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: horizontal;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: row;
+          flex-direction: row;
+  -webkit-box-pack: start;
+      -ms-flex-pack: start;
+          justify-content: start;
+}
+@media screen and (max-width: 768px) {
+  .formulario .row {
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+            flex-direction: column;
+  }
+}
+.formulario .row .col {
+  width: 100%;
+  margin-right: 20px;
+}
+.formulario .row .col .input-cont {
+  width: 100%;
+}
+.formulario .row .col .input-cont.half-w {
+  width: 100%;
+}
+.formulario .row .input-cont {
+  border: 1px solid #000;
+  position: relative;
+  margin-bottom: 40px;
+  width: 100%;
+  margin-right: 26px;
+  width: 25%;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+}
+.formulario .row .input-cont.full-w {
+  width: 100%;
+}
+.formulario .row .input-cont.half-w {
+  width: calc(50% + 26px);
+}
+.formulario .row .input-cont.half-w.unique {
+  width: calc(50% - 13px);
+}
+.formulario .row .input-cont:last-child {
+  margin-right: 0;
+}
+.formulario .row .input-cont:focus-within {
+  border-color: #f96302;
+}
+.formulario .row .input-cont label {
+  font-size: 18px;
+  position: absolute;
+  top: -10px;
+  left: 10px;
+  background-color: #fff;
+  padding: 2px 10px;
+  z-index: 1;
+}
+.formulario .row .input-cont input,
+.formulario .row .input-cont select,
+.formulario .row .input-cont textarea {
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+  border: none;
+  font-family: "Helvetica Neue LT Std LtCn";
+  padding: 0 20px;
+  font-size: 18px;
+  color: #333;
+  padding-top: 20px;
+  padding-bottom: 10px;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+  height: 100%;
+  width: 100%;
+}
+.formulario .row .input-cont input::-webkit-input-placeholder, .formulario .row .input-cont select::-webkit-input-placeholder, .formulario .row .input-cont textarea::-webkit-input-placeholder {
+  color: #808080;
+}
+.formulario .row .input-cont input::-moz-placeholder, .formulario .row .input-cont select::-moz-placeholder, .formulario .row .input-cont textarea::-moz-placeholder {
+  color: #808080;
+}
+.formulario .row .input-cont input:-ms-input-placeholder, .formulario .row .input-cont select:-ms-input-placeholder, .formulario .row .input-cont textarea:-ms-input-placeholder {
+  color: #808080;
+}
+.formulario .row .input-cont input::-ms-input-placeholder, .formulario .row .input-cont select::-ms-input-placeholder, .formulario .row .input-cont textarea::-ms-input-placeholder {
+  color: #808080;
+}
+.formulario .row .input-cont input::placeholder,
+.formulario .row .input-cont select::placeholder,
+.formulario .row .input-cont textarea::placeholder {
+  color: #808080;
+}
+.formulario .row .input-cont input:focus,
+.formulario .row .input-cont select:focus,
+.formulario .row .input-cont textarea:focus {
+  outline: none;
+}
+.formulario .row .input-cont textarea,
+.formulario .row .input-cont select {
+  margin-bottom: 0;
+}
+.formulario .row .input-cont .input-file-image {
+  position: relative;
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  -webkit-transition: border-color 0.3s ease;
+  transition: border-color 0.3s ease;
+}
+.formulario .row .input-cont .input-file-image:hover {
+  border-color: #999;
+}
+.formulario .row .input-cont .input-file-image input[type=file] {
+  opacity: 0;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+.formulario .row .input-cont .input-file-image .icon {
+  font-size: 3rem;
+  color: #bbb;
+  z-index: 1;
+}
+.formulario .row .input-cont .input-file-image .text {
+  color: #666;
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
+}
+.formulario .row .input-cont .input-file-image .preview {
+  max-width: 100%;
+  max-height: 150px;
+  display: block;
+  margin-top: 10px;
+}
+.formulario .row .input-cont .input-file-drop {
+  position: relative;
+  padding: 0 20px;
+  font-size: 18px;
+  color: #333;
+  padding-top: 20px;
+  padding-bottom: 10px;
+  text-align: center;
+  cursor: pointer;
+  -webkit-transition: border-color 0.3s;
+  transition: border-color 0.3s;
+}
+.formulario .row .input-cont .input-file-drop:hover {
+  border-color: #999;
+}
+.formulario .row .input-cont .input-file-drop input[type=file] {
+  opacity: 0;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+.formulario .row .input-cont .input-file-drop .text {
+  font-size: 0.95rem;
+  color: #666;
+  text-align: left;
+}
+.formulario .row .input-cont .input-file-drop .text .icon {
+  font-size: 1.2rem;
+  margin-left: 0.5rem;
+  color: #e85e00;
+}
+.formulario .row .input-cont .input-file-drop .text .icon img {
+  width: 10px;
+  height: 10px;
+}
+.formulario .row .input-cont .input-file-drop .file-name {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: #444;
+  display: none;
+}
+@media screen and (max-width: 768px) {
+  .formulario .row .input-cont {
+    width: 100%;
+    margin-right: 0;
+  }
+  .formulario .row .input-cont.input-cont {
+    width: 100%;
+    display: block;
+  }
+}
+.formulario button[type=submit], .formulario button.recordatorio {
+  background-color: #f96302;
+  color: #fff;
+  font-size: 24px;
+  padding: 10px 50px;
+  border: none;
+  cursor: pointer;
+  margin-top: 20px;
+  font-family: "Helvetica Neue LT Std HvCn";
+  padding-top: 20px;
+  margin-right: 30px;
+  width: 400px;
+  -webkit-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+  border: 1px solid #f96302;
+}
+.formulario button[type=submit]:hover, .formulario button.recordatorio:hover {
+  background-color: rgb(198.406374502, 78.8844621514, 1.593625498);
+}
+@media screen and (max-width: 768px) {
+  .formulario button[type=submit], .formulario button.recordatorio {
+    width: 100%;
+    padding: 10px 0;
+    padding-top: 20px;
+    font-size: 28px;
+  }
+}
+.formulario button.recordatorio {
+  background-color: #fff;
+  color: #000;
+  border: 1px solid black;
+}
+.formulario button.recordatorio:hover {
+  background-color: #999;
+  border: 1px solid #999;
+  color: #fff;
+}
+
+.divider {
+  margin: 40px 0;
+}
