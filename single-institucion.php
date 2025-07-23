@@ -1,8 +1,4 @@
 <?php
-/**
- * Template Name: Instituciones
- **/
-
 get_header('admin');
 
 // Verifica si hay ID en el query
@@ -63,22 +59,20 @@ $necesidades = $institucion ? get_field('necesidades', $institucion_id) : [];
 $presentacion_institucional = $institucion ? get_field('presentacion_institucional', $institucion_id) : [];
 $archivos_requeridos = $institucion ? get_field('archivos_requeridos', $institucion_id) : [];
 
-echo '<pre>';
-print_r($info_general);
-print_r($info_contacto);
-print_r($necesidades);
-print_r($presentacion_institucional);
-print_r($archivos_requeridos);
-echo '</pre>';
+$IG_estado = $info_general['estado'] ?? '';
+$IG_municipio = $info_general['municipio'] ?? '';
 
-function slugify_estado($string)
-{
-    $string = strtolower($string);
-    $string = iconv('UTF-8', 'ASCII//TRANSLIT', $string); // quita acentos
-    $string = preg_replace('/[^a-z0-9\s-]/', '', $string); // elimina símbolos raros
-    $string = preg_replace('/[\s]+/', '-', $string); // espacios → guiones
-    return trim($string, '-');
-}
+$IC_entidad = $info_contacto['entidad_federativa'] ?? '';
+$IC_ciudad = $info_contacto['ciudad'] ?? '';
+$tipo_institucion = $info_general['tipo_institucion'] ?? '';
+
+$tipos_institucion = [
+    'asociacion civil',
+    'fundacion',
+    'iap',
+    'otro'
+];
+
 function mostrar_archivo_existente($campo, $label, $grupo, $mostrar_estado = true)
 {
     if (empty($grupo[$campo])) {
@@ -171,6 +165,10 @@ if (is_array($logo) && isset($logo['url'])) {
 
         <form action="" method="post" enctype="multipart/form-data">
             <?php wp_nonce_field('registrar_institucion', 'institucion_nonce'); ?>
+            <?php if (!empty($institucion_id)): ?>
+                <input type="hidden" name="institucion_id" value="<?php echo esc_attr($institucion_id); ?>">
+            <?php endif; ?>
+
 
             <div class="title-cont">
                 <p class="title">Información General</p>
@@ -188,10 +186,13 @@ if (is_array($logo) && isset($logo['url'])) {
                     <label>Tipo de Institución</label>
                     <select name="tipo_institucion">
                         <option value="">Seleccione una opción</option>
-                        <option value="asociacion civil">Asociación Civil</option>
-                        <option value="fundacion">Fundación</option>
-                        <option value="iap">IAP</option>
-                        <option value="otro">Otro</option>
+                        <?php foreach ($tipos_institucion as $tipo): ?>
+                            <option value="<?php echo esc_attr($tipo); ?>" <?php if (esc_attr($tipo) == $tipo_institucion) {
+                                   echo 'selected';
+                               } ?>>
+                                <?php echo esc_html(ucfirst($tipo)); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
 
@@ -206,7 +207,8 @@ if (is_array($logo) && isset($logo['url'])) {
             <div class="row">
                 <div class="input-cont half-w">
                     <label>Domicilio Fiscal</label>
-                    <input type="text" name="domicilio_fiscal" value=" " required>
+                    <input type="text" name="domicilio_fiscal"
+                        value="<?php echo esc_attr($info_general['domicilio_fiscal'] ?? ''); ?>" required>
 
                 </div>
             </div>
@@ -216,7 +218,9 @@ if (is_array($logo) && isset($logo['url'])) {
                     <select name="estado" id="estado-select">
                         <option value="">Seleccione un estado</option>
                         <?php foreach ($estados as $estado): ?>
-                            <option value="<?php echo esc_attr(slugify_estado($estado)); ?>">
+                            <option value="<?php echo esc_attr($estado); ?>" <?php if (esc_attr($estado) == $IG_estado) {
+                                   echo 'selected';
+                               } ?>>
                                 <?php echo esc_html($estado); ?>
                             </option>
                         <?php endforeach; ?>
@@ -251,7 +255,9 @@ if (is_array($logo) && isset($logo['url'])) {
                     <select name="entidad_federativa" id="entidad-select" required>
                         <option value="">Seleccione una opción</option>
                         <?php foreach ($estados as $estado): ?>
-                            <option value="<?php echo esc_attr(slugify_estado($estado)); ?>">
+                            <option value="<?php echo esc_attr($estado); ?>" <?php if (esc_attr($estado) == $IC_entidad) {
+                                   echo 'selected';
+                               } ?>>
                                 <?php echo esc_html($estado); ?>
                             </option>
                         <?php endforeach; ?>
@@ -388,13 +394,14 @@ if (is_array($logo) && isset($logo['url'])) {
             <div class="row">
                 <div class="input-cont half-w">
                     <label>Principal necesidad que tiene la institución</label>
-                    <textarea name="necesidad"></textarea>
+                    <textarea name="necesidad"><?php echo esc_attr($necesidades['necesidad'] ?? ''); ?></textarea>
                 </div>
 
 
                 <div class="input-cont">
                     <label>No. anual personas beneficiadas*</label>
-                    <input type="text" name="numero_anual" required>
+                    <input type="text" name="numero_anual" required
+                        value="<?php echo esc_attr(trim($necesidades['numero_anual'] ?? '')); ?>">>
                 </div>
             </div>
 
@@ -446,194 +453,8 @@ if (is_array($logo) && isset($logo['url'])) {
                 <p class="title">Presentación Institucional</p>
             </div>
 
-            <p>Favor de incluir archivo (foto, vídeo, documento) informativo sobre la institución</p>
-
-            <div class="row">
-                <div class="col">
-                    <div class="input-cont half-w">
-                        <label>Adjuntar Logo de la Institución</label>
 
 
-                        <div class="input-file-image">
-                            <?php if ($logo_url): ?>
-                                <img class="preview" id="logoPreview" src="<?php echo esc_url($logo_url); ?>"
-                                    alt="Logo actual">
-                            <?php else: ?>
-                                <div class="icon">
-                                    <img src="<?php echo get_template_directory_uri() . '/img/icon-preview.png'; ?>" alt="">
-                                </div>
-                                <div class="text">Selecciona una imagen</div>
-                                <img class="preview" id="logoPreview" style="display:none;">
-                            <?php endif; ?>
-
-                            <input type="file" name="logo_de_la_institucion" id="logoInput" accept="image/*">
-                        </div>
-                    </div>
-                </div>
-
-
-                <div class="col">
-                    <div class="input-cont half-w">
-                        <label>Adjuntar Solicitud en Word o PDF</label>
-                        <div class="input-file-drop" id="dropZoneCarta">
-                            <div class="text">
-                                <span id="fileNameCarta">Arrastra los archivos aquí</span>
-                                <span class="icon">
-                                    <img src="<?php echo get_template_directory_uri() . '/img/icon-clip.png'; ?>"
-                                        alt="">
-                                </span>
-                            </div>
-                            <input type="file" name="carta_solicitud" id="inputCarta" accept=".pdf,.doc,.docx" multiple>
-                        </div>
-                        <?php mostrar_archivo_existente('carta_solicitud', 'Carta Solicitud', $presentacion_institucional, false);
-                        ?>
-
-                    </div>
-
-                    <div class="input-cont half-w">
-                        <label>Adjuntar Fotografías</label>
-                        <div class="input-file-drop" id="dropZoneFotos">
-                            <div class="text">
-                                <span id="fileNameFotos">Arrastra los archivos aquí</span>
-                                <span class="icon">
-                                    <img src="<?php echo get_template_directory_uri() . '/img/icon-clip.png'; ?>"
-                                        alt="">
-                                </span>
-                            </div>
-                            <input type="file" name="fotografias" id="inputFotos" accept="image/*" multiple>
-
-                        </div>
-                        <?php mostrar_archivo_existente('fotografias', 'Fotografías', $presentacion_institucional, false);
-                        ?>
-                    </div>
-                </div>
-
-            </div>
-
-            <div class="title-cont">
-                <p class="title">Archivos Requeridos</p>
-            </div>
-
-            <div class="row">
-                <div class="input-cont half-w">
-                    <label>Acta Constitutiva en PDF</label>
-                    <div class="input-file-drop" id="dropZoneActaConstitutiva">
-                        <div class="text">
-                            <span id="fileNameActaConstitutiva">Arrastra los archivos aquí</span>
-                            <span class="icon">
-                                <img src="<?php echo get_template_directory_uri() . '/img/icon-clip.png'; ?>" alt="">
-                            </span>
-                        </div>
-                        <input type="file" name="acta_constitutiva" id="inputActaConstitutiva" accept=".pdf">
-                    </div>
-                    <?php mostrar_archivo_existente('acta_constitutiva', 'Acta Constitutiva en PDF', $archivos_requeridos); ?>
-
-                </div>
-
-                <div class="input-cont half-w">
-                    <label>Comprobante de Domicilio en PDF o foto</label>
-                    <div class="input-file-drop" id="dropZoneCompDomicilio">
-                        <div class="text">
-                            <span id="fileNameCompDomicilio">Arrastra los archivos aquí</span>
-                            <span class="icon">
-                                <img src="<?php echo get_template_directory_uri() . '/img/icon-clip.png'; ?>" alt="">
-                            </span>
-                        </div>
-                        <input type="file" name="comprobante_domicilio" id="inputCompDomicilio"
-                            accept=".pdf,.png,.jpg,.jpeg">
-                    </div>
-                    <?php
-                    mostrar_archivo_existente('comprobante_domicilio', 'Comprobante de Domicilio', $archivos_requeridos);
-                    ?>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="input-cont half-w">
-                    <label>Copia Recibo Dedudicble en PDF o foto</label>
-                    <div class="input-file-drop" id="dropZoneDeducible">
-                        <div class="text">
-                            <span id="fileNameDeducible">Arrastra los archivos aquí</span>
-                            <span class="icon">
-                                <img src="<?php echo get_template_directory_uri() . '/img/icon-clip.png'; ?>" alt="">
-                            </span>
-                        </div>
-                        <input type="file" name="deducible" id="inputDeducible" accept=".pdf,.png,.jpg,.jpeg">
-                    </div>
-                    <?php
-                    mostrar_archivo_existente('deducible', 'Recibo Deducible', $archivos_requeridos);
-                    ?>
-                </div>
-
-                <div class="input-cont half-w">
-                    <label>Identificación del apoderado legal en PDF o foto</label>
-                    <div class="input-file-drop" id="dropZoneApoderadoLegal">
-                        <div class="text">
-                            <span id="fileNameApoderadoLegal">Arrastra los archivos aquí</span>
-                            <span class="icon">
-                                <img src="<?php echo get_template_directory_uri() . '/img/icon-clip.png'; ?>" alt="">
-                            </span>
-                        </div>
-                        <input type="file" name="apoderado_legal" id="inputApoderadoLegal"
-                            accept=".pdf,.png,.jpg,.jpeg">
-                    </div>
-                    <?php
-                    mostrar_archivo_existente('apoderado_legal', 'Identificación del apoderado legal', $archivos_requeridos);
-                    ?>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="input-cont half-w">
-                    <label>Solicitud de alta de institución en Excel</label>
-                    <div class="input-file-drop" id="dropZoneInstitucionExcel">
-                        <div class="text">
-                            <span id="fileNameInstitucionExcel">Arrastra los archivos aquí</span>
-                            <span class="icon">
-                                <img src="<?php echo get_template_directory_uri() . '/img/icon-clip.png'; ?>" alt="">
-                            </span>
-                        </div>
-                        <input type="file" name="institucion_excel" id="inputInstitucionExcel"
-                            accept=".pdf,.png,.jpg,.jpeg">
-                    </div>
-                    <?php mostrar_archivo_existente('institucion_excel', 'Solicitud de alta de institución en Excel', $archivos_requeridos); ?>
-                </div>
-
-                <div class="input-cont half-w">
-                    <label>Certificado de Donaciones en PDF</label>
-                    <div class="input-file-drop" id="dropZoneCertificadoDonaciones">
-                        <div class="text">
-                            <span id="fileNameCertificadoDonaciones">Arrastra los archivos aquí</span>
-                            <span class="icon">
-                                <img src="<?php echo get_template_directory_uri() . '/img/icon-clip.png'; ?>" alt="">
-                            </span>
-                        </div>
-                        <input type="file" name="certificado_donaciones" id="inputCertificadoDonaciones" accept=".pdf">
-                    </div>
-                    <?php
-                    mostrar_archivo_existente('certificado_donaciones', 'Certificado de Donaciones', $archivos_requeridos);
-                    ?>
-                </div>
-            </div>
-
-            <div class="row">
-
-
-                <div class="input-cont half-w unique">
-                    <label>RFC en PDF</label>
-                    <div class="input-file-drop" id="dropZoneRFC">
-                        <div class="text">
-                            <span id="fileNameRFC">Arrastra los archivos aquí</span>
-                            <span class="icon">
-                                <img src="<?php echo get_template_directory_uri() . '/img/icon-clip.png'; ?>" alt="">
-                            </span>
-                        </div>
-                        <input type="file" name="rfc_archivo" id="inputRFC" accept=".pdf">
-                    </div>
-                    <?php mostrar_archivo_existente('rfc_archivo', 'RFC en PDF', $archivos_requeridos); ?>
-
-                </div>
-            </div>
 
             <button type="submit" name="submit_institucion">ALTA COMPLETA</button>
             <button class="recordatorio" name="recordatorio">ENVIAR RECORDATORIO</button>
@@ -653,193 +474,181 @@ if (is_array($logo) && isset($logo['url'])) {
             </div>
         </form>
 
+
+        <div class="title-cont">
+            <p class="title">Tracking de status</p>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Fecha</th>
+                    <th>Concepto</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </tbody>
+        </table>
+
+
     </div>
-    <script>
-        function slugify(text) {
-            return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                .toLowerCase().replace(/\s+/g, '-');
-        }
-        document.addEventListener('DOMContentLoaded', function () {
-
-            /**
-             * Manejo de select de estado y municipio
-             */
-            const estadoSelect = document.getElementById('estado-select');
-            const municipioSelect = document.getElementById('municipio-select');
-
-            const entidadSelect = document.getElementById('entidad-select');
-            const ciudadSelect = document.getElementById('ciudad-select');
-
-            // Construye la URL del archivo JSON relativo a la ruta base
-            const basePath = window.location.origin + window.location.pathname.split('/').slice(0, 2).join('/');
-            const jsonUrl = basePath + '/wp-content/themes/donaciones/js/municipios-estado.json';
+</div>
 
 
-            // Lista original de estados con formato exacto como en el JSON
-            const estadosOriginal = [
-                "Aguascalientes", "Baja California", "Baja California Sur", "Campeche", "Chiapas",
-                "Chihuahua", "Ciudad de México", "Coahuila", "Colima", "Durango", "Estado de México",
-                "Guanajuato", "Guerrero", "Hidalgo", "Jalisco", "Michoacán", "Morelos", "Nayarit",
-                "Nuevo León", "Oaxaca", "Puebla", "Querétaro", "Quintana Roo", "San Luis Potosí",
-                "Sinaloa", "Sonora", "Tabasco", "Tamaulipas", "Tlaxcala", "Veracruz", "Yucatán", "Zacatecas"
-            ];
+<script>
 
+    document.addEventListener('DOMContentLoaded', function () {
 
+        const estadoSelect = document.getElementById('estado-select');
+        const municipioSelect = document.getElementById('municipio-select');
+        const entidadSelect = document.getElementById('entidad-select');
+        const ciudadSelect = document.getElementById('ciudad-select');
 
-            // Mapeo para traducir el value del select al nombre real del JSON
-            const estadoMap = {};
+        const basePath = window.location.origin + window.location.pathname.split('/').slice(0, 2).join('/');
+        const jsonMunicipios = basePath + '/wp-content/themes/donaciones/js/municipios-estado.json';
+        const jsonEstados = basePath + '/wp-content/themes/donaciones/js/estados.json';
 
-            // Llena el mapa con los nombres originales de los estados
-            estadosOriginal.forEach(nombre => {
-                estadoMap[slugify(nombre)] = nombre;
+        const estadoMap = {}; // slug => nombre real
+
+        const valoresMunicipios = {
+            ig_municipio: '<?php echo esc_js($IG_municipio); ?>',
+            ig_estado: '<?php echo esc_js($IG_estado); ?>',
+            ic_ciudad: '<?php echo esc_js($IC_ciudad); ?>',
+            ic_entidad: '<?php echo esc_js($IC_entidad); ?>'
+        };
+
+        // Cargar estados y construir el mapa
+        fetch(jsonEstados)
+            .then(r => r.json())
+            .then(estados => {
+                estados.forEach(nombre => {
+                    estadoMap[nombre] = nombre;
+                    if (nombre == valoresMunicipios.ic_entidad) {
+                        console.log(nombre);
+                        llenarMunicipios(nombre, ciudadSelect, valoresMunicipios.ic_ciudad);
+
+                    } else if (nombre == valoresMunicipios.ig_estado) {
+                        console.log(nombre);
+                        llenarMunicipios(nombre, municipioSelect, valoresMunicipios.ig_municipio);
+                    }
+                });
+            })
+            .catch(err => {
+                console.error('Error al cargar estados:', err);
             });
 
-            // Maneja el cambio en el select de estado
-            function populateMunicipios(estadoSelectEl, municipioSelectEl) {
-                const estadoSlug = estadoSelectEl.value;
-                const estadoNombre = estadoMap[estadoSlug];
+        // Función para llenar municipios basada en estadoSlug
+        function llenarMunicipios(estadoSlug, municipioSelectEl, municipioActual) {
+            const estadoNombre = estadoMap[estadoSlug];
+            if (!estadoNombre) {
+                municipioSelectEl.innerHTML = '<option value="">Seleccione un municipio</option>';
+                return;
+            }
 
-                if (!estadoNombre) {
+            fetch(jsonMunicipios)
+                .then(r => r.json())
+                .then(data => {
+                    const municipios = data[estadoNombre] || [];
                     municipioSelectEl.innerHTML = '<option value="">Seleccione un municipio</option>';
-                    return;
-                }
-
-                fetch(jsonUrl)
-                    .then(r => r.json())
-                    .then(data => {
-                        const municipios = data[estadoNombre] || [];
-                        municipioSelectEl.innerHTML = '<option value="">Seleccione un municipio</option>';
-                        municipios.forEach(m => {
-                            const opt = document.createElement('option');
-                            opt.value = opt.textContent = m;
-                            municipioSelectEl.appendChild(opt);
-                        });
-                    })
-                    .catch(err => {
-                        console.error('Error al cargar municipios:', err);
-                        municipioSelectEl.innerHTML = '<option value="">Error al cargar</option>';
-                    });
-            }
-
-            // Asigna el evento de cambio a los selects
-            estadoSelect.addEventListener('change', () => populateMunicipios(estadoSelect, municipioSelect));
-            entidadSelect.addEventListener('change', () => populateMunicipios(entidadSelect, ciudadSelect));
-
-            if (estadoSelect.value) {
-                populateMunicipios(estadoSelect, municipioSelect);
-            }
-            if (entidadSelect.value) {
-                populateMunicipios(entidadSelect, ciudadSelect);
-            }
-
-            // 🔽 Manejo de archivos arrastrados
-            function handleFileChange(inputId, fileLabelId) {
-                const input = document.getElementById(inputId);
-                const label = document.getElementById(fileLabelId);
-
-                if (input && label) {
-                    input.addEventListener('change', function (e) {
-                        const files = Array.from(e.target.files);
-                        if (files.length > 0) {
-                            const max = 6;
-                            const names = files.slice(0, max).map(f => f.name);
-                            label.textContent = names.join(', ') + (files.length > max ? ' (solo se mostrarán 6)' : '');
-                            label.style.fontWeight = 'bold';
-                            label.style.color = '#333';
-                        } else {
-                            label.textContent = 'Arrastra los archivos aquí';
-                            label.style.fontWeight = 'normal';
-                            label.style.color = '#666';
+                    let municipioExiste = false;
+                    municipios.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m;
+                        opt.textContent = m;
+                        if (m === municipioActual) {
+                            opt.selected = true;
+                            municipioExiste = true;
                         }
+                        municipioSelectEl.appendChild(opt);
                     });
-                }
 
+                    if (municipioActual && !municipioExiste) {
+                        const opt = document.createElement('option');
+                        opt.value = municipioActual;
+                        opt.textContent = municipioActual;
+                        opt.selected = true;
+                        municipioSelectEl.appendChild(opt);
+                    }
+                })
+                .catch(err => {
+                    console.error('Error al cargar municipios:', err);
+                    municipioSelectEl.innerHTML = '<option value="">Error al cargar</option>';
+                });
+        }
 
-            }
+        estadoSelect.addEventListener('change', function () {
+            const estadoSlug = this.value;
+            llenarMunicipios(estadoSlug, municipioSelect, '');
+        });
 
-            // Asigna el manejo de archivos a los inputs
-            handleFileChange('inputCarta', 'fileNameCarta');
-            handleFileChange('inputFotos', 'fileNameFotos');
-            handleFileChange('inputActaConstitutiva', 'fileNameActaConstitutiva');
-            handleFileChange('inputCompDomicilio', 'fileNameCompDomicilio');
-            handleFileChange('inputDeducible', 'fileNameDeducible');
-            handleFileChange('inputApoderadoLegal', 'fileNameApoderadoLegal');
-            handleFileChange('inputInstitucionExcel', 'fileNameInstitucionExcel');
-            handleFileChange('inputCertificadoDonaciones', 'fileNameCertificadoDonaciones');
-            handleFileChange('inputRFC', 'fileNameRFC');
+        entidadSelect.addEventListener('change', function () {
+            const estadoSlug = this.value;
+            llenarMunicipios(estadoSlug, ciudadSelect, '');
+        });
 
-            // 🔽 Input imagen logo
-            const logoInput = document.getElementById('logoInput');
-            const logoPreview = document.getElementById('logoPreview');
-            if (logoInput && logoPreview) {
-                logoInput.addEventListener('change', function (e) {
-                    const file = e.target.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = function (evt) {
-                            logoPreview.src = evt.target.result;
-                            logoPreview.style.display = 'block';
-                        };
-                        reader.readAsDataURL(file);
+        // 🔽 Manejo de archivos arrastrados
+        function handleFileChange(inputId, fileLabelId) {
+            const input = document.getElementById(inputId);
+            const label = document.getElementById(fileLabelId);
+
+            if (input && label) {
+                input.addEventListener('change', function (e) {
+                    const files = Array.from(e.target.files);
+                    if (files.length > 0) {
+                        const max = 6;
+                        const names = files.slice(0, max).map(f => f.name);
+                        label.textContent = names.join(', ') + (files.length > max ? ' (solo se mostrarán 6)' : '');
+                        label.style.fontWeight = 'bold';
+                        label.style.color = '#333';
+                    } else {
+                        label.textContent = 'Arrastra los archivos aquí';
+                        label.style.fontWeight = 'normal';
+                        label.style.color = '#666';
                     }
                 });
             }
-        });
-    </script>
-</div>
+        }
+        // Asigna el manejo de archivos a los inputs
+        handleFileChange('inputCarta', 'fileNameCarta');
+        handleFileChange('inputFotos', 'fileNameFotos');
+        handleFileChange('inputActaConstitutiva', 'fileNameActaConstitutiva');
+        handleFileChange('inputCompDomicilio', 'fileNameCompDomicilio');
+        handleFileChange('inputDeducible', 'fileNameDeducible');
+        handleFileChange('inputApoderadoLegal', 'fileNameApoderadoLegal');
+        handleFileChange('inputInstitucionExcel', 'fileNameInstitucionExcel');
+        handleFileChange('inputCertificadoDonaciones', 'fileNameCertificadoDonaciones');
+        handleFileChange('inputRFC', 'fileNameRFC');
 
-<div class="container">
-    <div class="title-cont">
-        <p class="title">Tracking de status</p>
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th></th>
-                <th>Fecha</th>
-                <th>Concepto</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-            </tr>
-            <tr>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-            </tr>
-            <!-- <?php while ($instituciones->have_posts()):
-                $instituciones->the_post();
-                $post_id = get_the_ID();
-                $info_contacto = get_field('informacion_de_contacto', $post_id);
-                $info_general = get_field('informacion_general', $post_id);
-                $single_url = get_permalink($post_id);
-
-                ?>
-                <tr data-url="<?php echo esc_url($single_url); ?>">
-                    <td>
-                        <input type="checkbox" name="instituciones[]" value="<?php echo esc_attr($post_id); ?>">
-                    </td>
-                    <td><?php the_title(); ?></td>
-                    <td><?php echo esc_html($info_general['rfc'] ?? '-'); ?></td>
-                    <td><?php echo esc_html($info_contacto['sede'] ?? '-'); ?></td>
-                    <td><?php echo esc_html($info_general['estado'] ?? '-'); ?></td>
-                    <td><?php echo esc_html($info_contacto['ciudad'] ?? '-'); ?></td>
-                    <td><?php echo esc_html($info_contacto['datos_del_presidente']['nombre_del_presidente'] ?? '-') ?></td>
-                    <td><?php echo esc_html($info_contacto['datos_del_presidente']['correo_contacto'] ?? '-'); ?></td>
-                    <td><?php echo esc_html($info_contacto['datos_del_presidente']['telefono'] ?? '-'); ?></td>
-                </tr>
-            <?php endwhile; ?> -->
-        </tbody>
-    </table>
-
-</div>
-
+        // 🔽 Input imagen logo
+        const logoInput = document.getElementById('logoInput');
+        const logoPreview = document.getElementById('logoPreview');
+        if (logoInput && logoPreview) {
+            logoInput.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (evt) {
+                        logoPreview.src = evt.target.result;
+                        logoPreview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+    });
+</script>
 <?php get_footer('admin'); ?>

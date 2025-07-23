@@ -83,7 +83,7 @@ if (function_exists('acf_add_local_field_group')):
         $new_columns['rfc'] = 'RFC';
         $new_columns['sede'] = 'Sede';
         $new_columns['estado'] = 'Estado';
-        $new_columns['ciudad'] = 'Ciudad';
+        $new_columns['municipio'] = 'Municipio';
         $new_columns['director'] = 'Director';
         $new_columns['correo_contacto'] = 'Correo';
         $new_columns['telefono'] = 'Teléfono';
@@ -94,6 +94,7 @@ if (function_exists('acf_add_local_field_group')):
 
     // Mostrar valores en columnas personalizadas
     add_action('manage_institucion_posts_custom_column', function ($column, $post_id) {
+        $info_general = get_field('informacion_general', $post_id);
         $info_contacto = get_field('informacion_de_contacto', $post_id);
         switch ($column) {
             case 'rfc':
@@ -107,8 +108,8 @@ if (function_exists('acf_add_local_field_group')):
                 $info_general = get_field('informacion_general', $post_id);
                 echo esc_html($info_general['estado'] ?? '-');
                 break;
-            case 'ciudad':
-                echo esc_html($info_contacto['ciudad'] ?? '-');
+            case 'municipio':
+                echo esc_html($info_general['municipio'] ?? '-');
                 break;
             case 'director':
                 echo esc_html($info_contacto['datos_del_presidente']['nombre_del_presidente'] ?? '-');
@@ -167,11 +168,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_institucion'])
         $tipo_labor = sanitize_text_field($_POST['tipo_labor']);
 
         // Crear post
-        $post_id = wp_insert_post([
+        $institucion_id = isset($_POST['institucion_id']) ? intval($_POST['institucion_id']) : 0;
+
+        $post_data = [
             'post_type' => 'institucion',
             'post_title' => $nombre_fiscal,
             'post_status' => 'publish',
-        ]);
+        ];
+
+        if ($institucion_id > 0 && get_post_type($institucion_id) === 'institucion') {
+            // Actualizar post existente
+            $post_data['ID'] = $institucion_id;
+            $post_id = wp_update_post($post_data);
+        } else {
+            // Crear nuevo post
+            $post_id = wp_insert_post($post_data);
+        }
 
         if (!is_wp_error($post_id)) {
 
