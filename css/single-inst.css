@@ -410,6 +410,9 @@
   border-color: white;
   background-color: rgb(223.703187251, 88.9422310757, 1.796812749);
 }
+.formulario button.btn-status:disabled {
+  background-color: #999;
+}
 .formulario button.recordatorio {
   background-color: #fff;
   color: #000;

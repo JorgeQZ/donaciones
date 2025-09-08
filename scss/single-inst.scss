@@ -336,6 +336,10 @@
             border-color: white;
             background-color: darken($orange, 5%);
         }
+
+        &:disabled{
+            background-color: #999;
+        }
     }
 
     button.recordatorio {

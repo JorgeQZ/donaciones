@@ -181,6 +181,31 @@ if (!function_exists('thd_badge_estado')) {
     }
 }
 
+if (!function_exists('thd_tiene_archivo')) {
+    function thd_tiene_archivo($valor)
+    {
+        if (empty($valor)) {
+            return false;
+        }
+        if (is_array($valor)) {
+            if (!empty($valor['url']) || !empty($valor['ID'])) {
+                return true;
+            }
+            if (isset($valor[0]) && is_array($valor[0]) && !empty($valor[0]['url'])) {
+                return true;
+            }
+            return false;
+        }
+        if (is_string($valor)) {
+            return trim($valor) !== '';
+        }
+        if (is_numeric($valor)) {
+            return (int)$valor > 0;
+        }
+        return !empty($valor);
+    }
+}
+
 // ————————————————————————————————————————
 // Logo (presentación institucional)
 // ————————————————————————————————————————
@@ -192,9 +217,8 @@ if (is_array($logo) && isset($logo['url'])) {
 
 // ————————————————————————————————————————
 // Handler de cambio de estado — SOLO subcampo por field_key
-// (Evita borrar archivos del group)
+// con fallback a meta y mapeo de choices
 // ————————————————————————————————————————
-// === Helpers ===
 if (!function_exists('thd_get_subfield_key')) {
     function thd_get_subfield_key($group_name, $sub_name, $post_id)
     {
@@ -211,7 +235,6 @@ if (!function_exists('thd_get_subfield_key')) {
     }
 }
 
-
 $mensaje_estado = '';
 if (
     isset($_POST['cambiar_estado_archivo'], $_POST['institucion_id']) &&
@@ -222,7 +245,6 @@ if (
     $archivo_key     = sanitize_key($_POST['archivo_key'] ?? '');
     $nuevo_estado_in = strtolower(trim((string)($_POST['nuevo_estado'] ?? '')));
 
-    // Normaliza entrada
     $map_norm = ['capturado' => 'capturado','autorizado' => 'autorizado','rechazado' => 'rechazado'];
     if (!$archivo_key || !isset($map_norm[$nuevo_estado_in])) {
         $mensaje_estado = 'Solicitud inválida.';
@@ -232,10 +254,10 @@ if (
         if ($archivo_key === 'rfc_archivo') {
             $sub_names[] = 'estado_del_rfc';
         }
-        $sub_names[] = 'estado_'.$archivo_key;      // nuestro preferido
+        $sub_names[] = 'estado_'.$archivo_key;      // preferido
         $sub_names[] = 'estado_del_'.$archivo_key;  // compat
 
-        // 1) Encuentra key del subcampo (si existe)
+        // 1) key del subcampo y name encontrado
         $sub_key = null;
         $found_name = null;
         foreach ($sub_names as $sn) {
@@ -246,45 +268,35 @@ if (
                 break;
             }
         }
-        // 2) Determina meta key plano (storage real de ACF Group)
         if (!$found_name) {
             $found_name = $sub_names[0];
         }
         $meta_key = 'archivos_requeridos_'.$found_name;
 
-        // 3) Determinar el value CORRECTO según choices
-        $target_value = $nuevo_estado_in; // por defecto usamos minúsculas
-        $choices = [];
+        // 2) Determinar VALUE correcto según choices
+        $target_value = $nuevo_estado_in;
         if ($sub_key) {
-            $fo = get_field_object($sub_key, $institucion_id); // incluye choices si es select
+            $fo = get_field_object($sub_key, $institucion_id);
             if (!empty($fo['choices']) && is_array($fo['choices'])) {
-                $choices = $fo['choices']; // ['autorizado'=>'Autorizado', ...] o al revés
-                // match por value o label en minúsculas
-                foreach ($choices as $val => $label) {
+                foreach ($fo['choices'] as $val => $label) {
                     if (strtolower((string)$val) === $nuevo_estado_in || strtolower((string)$label) === $nuevo_estado_in) {
-                        $target_value = $val; // ACF guarda el VALUE
+                        $target_value = $val;
                         break;
                     }
-                }
-            } else {
-                // si no hay choices, intenta capitalizar (por si guardan label)
-                if (in_array($nuevo_estado_in, ['capturado','autorizado','rechazado'], true)) {
-                    $target_value = $nuevo_estado_in; // mantenemos value minúscula
                 }
             }
         }
 
-        // 4) Guardar (intentamos por field_key; si no, por meta_key)
+        // 3) Guardar (primero por field_key; si falla, por meta)
         $saved = null;
         if ($sub_key) {
             $saved = update_field($sub_key, $target_value, $institucion_id);
         }
         if ($saved === false || $saved === null) {
-            // Fallback: escribe meta directamente
             update_post_meta($institucion_id, $meta_key, $target_value);
         }
 
-        // 5) Verificar lectura (por key y por meta)
+        // 4) Verificar lectura
         $leido = null;
         if ($sub_key) {
             $leido = get_field($sub_key, $institucion_id);
@@ -298,7 +310,6 @@ if (
 
         if (strtolower((string)$leido) === strtolower((string)$target_value)) {
             $mensaje_estado = 'Estado actualizado a '.ucfirst($nuevo_estado_in).'.';
-            // Refresca grupo para render
             $archivos_requeridos = get_field('archivos_requeridos', $institucion_id) ?: [];
         } else {
             $mensaje_estado = 'No se pudo actualizar el estado.';
@@ -538,7 +549,7 @@ if (
                 <div class="input-cont">
                     <label>No. anual personas beneficiadas*</label>
                     <input type="text" name="numero_anual" required
-                        value="<?php echo esc_attr(trim($necesidades['numero_anual'] ?? '')); ?>">>
+                        value="<?php echo esc_attr(trim($necesidades['numero_anual'] ?? '')); ?>">
                 </div>
             </div>
 
@@ -827,6 +838,27 @@ endforeach;
         </div>
         <?php endif; ?>
 
+        <?php
+        // Config de filas
+        $files = [
+            ['key' => 'acta_constitutiva',      'label' => 'Acta Constitutiva'],
+            ['key' => 'comprobante_domicilio',  'label' => 'Comprobante de Domicilio'],
+            ['key' => 'deducible',              'label' => 'Copia Recibo Deducible'],
+            ['key' => 'apoderado_legal',        'label' => 'Identificación del apoderado legal'],
+            ['key' => 'institucion_excel',      'label' => 'Solicitud de alta de institución'],
+            ['key' => 'certificado_donaciones', 'label' => 'Certificado de Donaciones'],
+            ['key' => 'rfc_archivo',            'label' => 'RFC'],
+        ];
+            $hay_archivos = false;
+            foreach ($files as $f) {
+                if (thd_tiene_archivo($archivos_requeridos[$f['key']] ?? null)) {
+                    $hay_archivos = true;
+                    break;
+                }
+            }
+            ?>
+
+        <?php if ($hay_archivos): ?>
         <table class="tracking-estatus">
             <thead>
                 <tr>
@@ -840,34 +872,44 @@ endforeach;
                 </tr>
             </thead>
             <tbody>
-                <?php
-                $files = [
-                    ['key' => 'acta_constitutiva',      'label' => 'Acta Constitutiva'],
-                    ['key' => 'comprobante_domicilio',  'label' => 'Comprobante de Domicilio'],
-                    ['key' => 'deducible',              'label' => 'Copia Recibo Deducible'],
-                    ['key' => 'apoderado_legal',        'label' => 'Identificación del apoderado legal'],
-                    ['key' => 'institucion_excel',      'label' => 'Solicitud de alta de institución'],
-                    ['key' => 'certificado_donaciones', 'label' => 'Certificado de Donaciones'],
-                    ['key' => 'rfc_archivo',            'label' => 'RFC'],
-                ];
+                <?php foreach ($files as $f):
+                    $campo = $f['key'];
+                    $label = $f['label'];
 
-            foreach ($files as $f):
-                $campo = $f['key'];
-                $label = $f['label'];
+                    $valor = $archivos_requeridos[$campo] ?? null;
+                    if (!thd_tiene_archivo($valor)) {
+                        continue;
+                    }
 
-                $valor = $archivos_requeridos[$campo] ?? '';
-                $url   = (is_array($valor) && !empty($valor['url'])) ? $valor['url'] : (is_string($valor) ? $valor : '');
-                $fecha = thd_fecha_archivo($valor);
+                    $url   = (is_array($valor) && !empty($valor['url'])) ? $valor['url'] : (is_string($valor) ? $valor : '');
+                    $fecha = thd_fecha_archivo($valor);
 
-                // Resolver estado (soporta ambas claves y RFC especial)
-                $estado_val = $archivos_requeridos['estado_'.$campo] ?? $archivos_requeridos['estado_del_'.$campo] ?? null;
-                if ($campo === 'rfc_archivo' && empty($estado_val)) {
-                    $estado_val = $archivos_requeridos['estado_del_rfc'] ?? null;
-                }
-                if ($estado_val === null || $estado_val === '') {
-                    $estado_val = 'Capturado';
-                }
-                ?>
+                    // Estado (lee meta directo → fallback al array)
+                    $estado_val = null;
+                    $sub_names = [];
+                    if ($campo === 'rfc_archivo') {
+                        $sub_names[] = 'estado_del_rfc';
+                    }
+                    $sub_names[] = 'estado_'.$campo;
+                    $sub_names[] = 'estado_del_'.$campo;
+
+                    foreach ($sub_names as $sn) {
+                        $meta_try = get_post_meta($institucion_id, 'archivos_requeridos_'.$sn, true);
+                        if ($meta_try !== '') {
+                            $estado_val = $meta_try;
+                            break;
+                        }
+                    }
+                    if ($estado_val === null || $estado_val === '') {
+                        $estado_val = $archivos_requeridos['estado_'.$campo] ?? $archivos_requeridos['estado_del_'.$campo] ?? null;
+                        if ($campo === 'rfc_archivo' && empty($estado_val)) {
+                            $estado_val = $archivos_requeridos['estado_del_rfc'] ?? null;
+                        }
+                    }
+                    if ($estado_val === null || $estado_val === '') {
+                        $estado_val = 'capturado';
+                    }
+                    ?>
                 <tr>
                     <td><?php if ($url): ?><a href="<?php echo esc_url($url); ?>" target="_blank"
                             rel="noopener">📎</a><?php endif; ?></td>
@@ -882,7 +924,7 @@ endforeach;
                             <input type="hidden" name="cambiar_estado_archivo" value="1">
                             <input type="hidden" name="institucion_id" value="<?php echo esc_attr($institucion_id); ?>">
                             <input type="hidden" name="archivo_key" value="<?php echo esc_attr($campo); ?>">
-                            <input type="hidden" name="nuevo_estado" value="Autorizado">
+                            <input type="hidden" name="nuevo_estado" value="autorizado">
                             <button type="submit" class="btn-status"
                                 <?php echo $url ? '' : 'disabled'; ?>>Autorizar</button>
                         </form>
@@ -891,7 +933,7 @@ endforeach;
                             <input type="hidden" name="cambiar_estado_archivo" value="1">
                             <input type="hidden" name="institucion_id" value="<?php echo esc_attr($institucion_id); ?>">
                             <input type="hidden" name="archivo_key" value="<?php echo esc_attr($campo); ?>">
-                            <input type="hidden" name="nuevo_estado" value="Rechazado">
+                            <input type="hidden" name="nuevo_estado" value="rechazado">
                             <button type="submit" class="btn-status">Rechazar</button>
                         </form>
                     </td>
@@ -900,7 +942,8 @@ endforeach;
                 <?php endforeach; ?>
             </tbody>
         </table>
-        <?php endif; ?>
+        <?php endif; // hay_archivos?>
+        <?php endif; // puede_ver_estados?>
 
     </div>
 </div>
