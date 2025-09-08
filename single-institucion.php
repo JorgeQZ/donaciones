@@ -194,7 +194,7 @@ if (is_array($logo) && isset($logo['url'])) {
 // Handler de cambio de estado — SOLO subcampo por field_key
 // (Evita borrar archivos del group)
 // ————————————————————————————————————————
-// Helper: obtener field_key de un subcampo dentro del group
+// === Helpers ===
 if (!function_exists('thd_get_subfield_key')) {
     function thd_get_subfield_key($group_name, $sub_name, $post_id)
     {
@@ -204,12 +204,13 @@ if (!function_exists('thd_get_subfield_key')) {
         }
         foreach ($group['sub_fields'] as $sf) {
             if (!empty($sf['name']) && $sf['name'] === $sub_name) {
-                return $sf['key']; // p.ej. field_66e...
+                return $sf['key']; // field_...
             }
         }
         return null;
     }
 }
+
 
 $mensaje_estado = '';
 if (
@@ -218,65 +219,90 @@ if (
     $puede_admin &&
     check_admin_referer('cambiar_estado_archivo_'.$institucion_id, 'estado_nonce')
 ) {
-    $archivo_key  = sanitize_key($_POST['archivo_key'] ?? '');
-    $nuevo_estado_raw = sanitize_text_field($_POST['nuevo_estado'] ?? ''); // lo que viene del botón
-    $permitidos   = ['capturado','autorizado','rechazado','Capturado','Autorizado','Rechazado'];
+    $archivo_key     = sanitize_key($_POST['archivo_key'] ?? '');
+    $nuevo_estado_in = strtolower(trim((string)($_POST['nuevo_estado'] ?? '')));
 
-    if ($archivo_key && in_array($nuevo_estado_raw, $permitidos, true)) {
-
-        // 1) Ubicar el subcampo de estado
-        $candidatas = [];
+    // Normaliza entrada
+    $map_norm = ['capturado' => 'capturado','autorizado' => 'autorizado','rechazado' => 'rechazado'];
+    if (!$archivo_key || !isset($map_norm[$nuevo_estado_in])) {
+        $mensaje_estado = 'Solicitud inválida.';
+    } else {
+        // Posibles nombres de subcampo ACF (name)
+        $sub_names = [];
         if ($archivo_key === 'rfc_archivo') {
-            $candidatas[] = 'estado_del_rfc';
+            $sub_names[] = 'estado_del_rfc';
         }
-        $candidatas[] = 'estado_'.$archivo_key;       // nuevos
-        $candidatas[] = 'estado_del_'.$archivo_key;   // compat
+        $sub_names[] = 'estado_'.$archivo_key;      // nuestro preferido
+        $sub_names[] = 'estado_del_'.$archivo_key;  // compat
 
+        // 1) Encuentra key del subcampo (si existe)
         $sub_key = null;
-        foreach ($candidatas as $name) {
-            $k = thd_get_subfield_key('archivos_requeridos', $name, $institucion_id);
+        $found_name = null;
+        foreach ($sub_names as $sn) {
+            $k = thd_get_subfield_key('archivos_requeridos', $sn, $institucion_id);
             if ($k) {
                 $sub_key = $k;
+                $found_name = $sn;
                 break;
             }
         }
+        // 2) Determina meta key plano (storage real de ACF Group)
+        if (!$found_name) {
+            $found_name = $sub_names[0];
+        }
+        $meta_key = 'archivos_requeridos_'.$found_name;
 
+        // 3) Determinar el value CORRECTO según choices
+        $target_value = $nuevo_estado_in; // por defecto usamos minúsculas
+        $choices = [];
         if ($sub_key) {
-            // 2) Resolver el "value" correcto según los choices del select
-            $fo = get_field_object($sub_key, $institucion_id); // incluye 'choices'
-            $target_value = $nuevo_estado_raw; // por si no hay choices
-            if ($fo && !empty($fo['choices']) && is_array($fo['choices'])) {
-                $want = strtolower($nuevo_estado_raw);
-                foreach ($fo['choices'] as $val => $label) {
-                    if (strtolower((string)$val) === $want || strtolower((string)$label) === $want) {
-                        $target_value = $val; // <-- ACF guarda el "value" (clave), no el label
+            $fo = get_field_object($sub_key, $institucion_id); // incluye choices si es select
+            if (!empty($fo['choices']) && is_array($fo['choices'])) {
+                $choices = $fo['choices']; // ['autorizado'=>'Autorizado', ...] o al revés
+                // match por value o label en minúsculas
+                foreach ($choices as $val => $label) {
+                    if (strtolower((string)$val) === $nuevo_estado_in || strtolower((string)$label) === $nuevo_estado_in) {
+                        $target_value = $val; // ACF guarda el VALUE
                         break;
                     }
                 }
-            }
-
-            // 3) Evitar "fallo" si ya está igual
-            $actual = get_field($sub_key, $institucion_id);
-            if (is_array($actual) && isset($actual['value'])) { // por si el return_format del select es "array"
-                $actual = $actual['value'];
-            }
-            if (strtolower((string)$actual) === strtolower((string)$target_value)) {
-                $mensaje_estado = 'El estado ya era ' . ucfirst(strtolower((string)$target_value)) . '.';
             } else {
-                // 4) Actualizar SOLO el subcampo (no reescribe el group completo)
-                $ok = update_field($sub_key, $target_value, $institucion_id);
-                if ($ok !== false) {
-                    $mensaje_estado = 'Estado actualizado a ' . ucfirst(strtolower((string)$target_value)) . '.';
-                    $archivos_requeridos = get_field('archivos_requeridos', $institucion_id) ?: [];
-                } else {
-                    $mensaje_estado = 'No se pudo actualizar el estado.';
+                // si no hay choices, intenta capitalizar (por si guardan label)
+                if (in_array($nuevo_estado_in, ['capturado','autorizado','rechazado'], true)) {
+                    $target_value = $nuevo_estado_in; // mantenemos value minúscula
                 }
             }
-        } else {
-            $mensaje_estado = 'No se encontró el subcampo de estado en "Archivos Requeridos".';
         }
-    } else {
-        $mensaje_estado = 'Solicitud inválida.';
+
+        // 4) Guardar (intentamos por field_key; si no, por meta_key)
+        $saved = null;
+        if ($sub_key) {
+            $saved = update_field($sub_key, $target_value, $institucion_id);
+        }
+        if ($saved === false || $saved === null) {
+            // Fallback: escribe meta directamente
+            update_post_meta($institucion_id, $meta_key, $target_value);
+        }
+
+        // 5) Verificar lectura (por key y por meta)
+        $leido = null;
+        if ($sub_key) {
+            $leido = get_field($sub_key, $institucion_id);
+            if (is_array($leido) && isset($leido['value'])) {
+                $leido = $leido['value'];
+            }
+        }
+        if ($leido === null || $leido === '') {
+            $leido = get_post_meta($institucion_id, $meta_key, true);
+        }
+
+        if (strtolower((string)$leido) === strtolower((string)$target_value)) {
+            $mensaje_estado = 'Estado actualizado a '.ucfirst($nuevo_estado_in).'.';
+            // Refresca grupo para render
+            $archivos_requeridos = get_field('archivos_requeridos', $institucion_id) ?: [];
+        } else {
+            $mensaje_estado = 'No se pudo actualizar el estado.';
+        }
     }
 }
 ?>
