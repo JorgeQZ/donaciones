@@ -154,7 +154,8 @@
 }
 .formulario .row .input-cont input,
 .formulario .row .input-cont select,
-.formulario .row .input-cont textarea {
+.formulario .row .input-cont textarea,
+.formulario .row .input-cont .selected-placeholder {
   -webkit-appearance: none;
      -moz-appearance: none;
           appearance: none;
@@ -170,31 +171,105 @@
   height: 100%;
   width: 100%;
 }
-.formulario .row .input-cont input::-webkit-input-placeholder, .formulario .row .input-cont select::-webkit-input-placeholder, .formulario .row .input-cont textarea::-webkit-input-placeholder {
+.formulario .row .input-cont input::-webkit-input-placeholder, .formulario .row .input-cont select::-webkit-input-placeholder, .formulario .row .input-cont textarea::-webkit-input-placeholder, .formulario .row .input-cont .selected-placeholder::-webkit-input-placeholder {
   color: #808080;
 }
-.formulario .row .input-cont input::-moz-placeholder, .formulario .row .input-cont select::-moz-placeholder, .formulario .row .input-cont textarea::-moz-placeholder {
+.formulario .row .input-cont input::-moz-placeholder, .formulario .row .input-cont select::-moz-placeholder, .formulario .row .input-cont textarea::-moz-placeholder, .formulario .row .input-cont .selected-placeholder::-moz-placeholder {
   color: #808080;
 }
-.formulario .row .input-cont input:-ms-input-placeholder, .formulario .row .input-cont select:-ms-input-placeholder, .formulario .row .input-cont textarea:-ms-input-placeholder {
+.formulario .row .input-cont input:-ms-input-placeholder, .formulario .row .input-cont select:-ms-input-placeholder, .formulario .row .input-cont textarea:-ms-input-placeholder, .formulario .row .input-cont .selected-placeholder:-ms-input-placeholder {
   color: #808080;
 }
-.formulario .row .input-cont input::-ms-input-placeholder, .formulario .row .input-cont select::-ms-input-placeholder, .formulario .row .input-cont textarea::-ms-input-placeholder {
+.formulario .row .input-cont input::-ms-input-placeholder, .formulario .row .input-cont select::-ms-input-placeholder, .formulario .row .input-cont textarea::-ms-input-placeholder, .formulario .row .input-cont .selected-placeholder::-ms-input-placeholder {
   color: #808080;
 }
 .formulario .row .input-cont input::placeholder,
 .formulario .row .input-cont select::placeholder,
-.formulario .row .input-cont textarea::placeholder {
+.formulario .row .input-cont textarea::placeholder,
+.formulario .row .input-cont .selected-placeholder::placeholder {
   color: #808080;
 }
 .formulario .row .input-cont input:focus,
 .formulario .row .input-cont select:focus,
-.formulario .row .input-cont textarea:focus {
+.formulario .row .input-cont textarea:focus,
+.formulario .row .input-cont .selected-placeholder:focus {
   outline: none;
 }
 .formulario .row .input-cont textarea,
 .formulario .row .input-cont select {
   margin-bottom: 0;
+}
+.formulario .row .input-cont .selected-placeholder {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+}
+.formulario .row .input-cont .selected-placeholder .tag {
+  background: #ddd;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-right: 4px;
+  margin-bottom: 0px;
+  margin-top: 0px;
+  font-size: 14px;
+  cursor: pointer;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  gap: 6px;
+}
+.formulario .row .input-cont .selected-placeholder .remove-tag {
+  font-weight: bold;
+  cursor: pointer;
+  background-color: #f96302;
+  color: white;
+  width: 15px;
+  height: 15px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  border-radius: 50%;
+  margin-top: -2px;
+}
+.formulario .row .input-cont .selected-placeholder .remove-tag:hover {
+  background-color: #f96302;
+  color: white;
+}
+.formulario .row .input-cont .custom-options {
+  position: absolute;
+  top: 100%;
+  background: white;
+  border: 1px solid black;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+  width: 100.5%;
+  left: -1px;
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.formulario .row .input-cont .custom-options.hidden {
+  display: none;
+}
+.formulario .row .input-cont .custom-options .option {
+  padding: 8px;
+  cursor: pointer;
+}
+.formulario .row .input-cont .custom-options .option.disabled {
+  color: #999;
+  cursor: not-allowed;
+}
+.formulario .row .input-cont .custom-options .option:hover {
+  background: #eee;
 }
 .formulario .row .input-cont .input-file-image {
   position: relative;
@@ -288,7 +363,8 @@
     display: block;
   }
 }
-.formulario button[type=submit], .formulario button.recordatorio {
+.formulario button[type=submit]:not(.btn-status),
+.formulario button.recordatorio {
   background-color: #f96302;
   color: #fff;
   font-size: 24px;
@@ -304,16 +380,35 @@
   transition: all 0.3s ease;
   border: 1px solid #f96302;
 }
-.formulario button[type=submit]:hover, .formulario button.recordatorio:hover {
+.formulario button[type=submit]:not(.btn-status):hover,
+.formulario button.recordatorio:hover {
   background-color: rgb(198.406374502, 78.8844621514, 1.593625498);
 }
 @media screen and (max-width: 768px) {
-  .formulario button[type=submit], .formulario button.recordatorio {
+  .formulario button[type=submit]:not(.btn-status),
+  .formulario button.recordatorio {
     width: 100%;
     padding: 10px 0;
     padding-top: 20px;
     font-size: 28px;
   }
+}
+.formulario button.btn-status {
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+  border: none;
+  font-size: 14px;
+  background-color: #f96302;
+  color: white;
+  cursor: pointer;
+  padding: 10px 20px;
+  font-family: "Helvetica Neue LT Std BdCn";
+  text-transform: uppercase;
+}
+.formulario button.btn-status:hover {
+  border-color: white;
+  background-color: rgb(223.703187251, 88.9422310757, 1.796812749);
 }
 .formulario button.recordatorio {
   background-color: #fff;

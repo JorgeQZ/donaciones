@@ -397,8 +397,7 @@ footer img {
   font-style: normal;
   font-display: swap;
 }
-body,
-body * {
+body, * {
   margin: 0;
   padding: 0;
   -webkit-box-sizing: border-box;

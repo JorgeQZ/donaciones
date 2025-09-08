@@ -144,10 +144,7 @@ footer {
                 }
 
                 &:hover{
-                    background-color: $orange;
-                    td{
-                        color: white;
-                    }
+                    background-color: darken(#e5e5e5, 5%);
                     cursor: pointer;
                 }
 
@@ -170,6 +167,15 @@ footer {
                         border: 1px solid $orange;
                         border-radius: 2px;
                         background-color: white;
+                    }
+                    span{
+                        background: white;
+                        color: $orange;
+                        display:inline-block;
+                        padding:10px 20px;
+
+                        font-weight:600;
+                        font-size: 14px;
                     }
                 }
             }

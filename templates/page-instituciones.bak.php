@@ -398,7 +398,7 @@ $info_contacto = $institucion ? get_field('informacion_de_contacto', $institucio
                         restored.addEventListener('click', () => handleOptionClick(restored));
                         optionsContainer.appendChild(restored);
 
-                        updateUI();
+                        cx();
                     });
 
                     span.appendChild(removeBtn);

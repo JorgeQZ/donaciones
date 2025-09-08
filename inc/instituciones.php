@@ -1,4 +1,5 @@
 <?php
+
 function registrar_cpt_instituciones()
 {
     $labels = array(
@@ -346,5 +347,154 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_institucion'])
 
     } else {
         wp_die('Nonce inválido.');
+    }
+}
+
+
+// Recuperar todos los valores únicos del campo ACF 'grupo_social'
+function values_necesidades_groups(string $grupos_social = 'grupo_social')
+{
+    global $wpdb;
+
+    $meta_key = 'necesidades_' . $grupos_social;
+    $raw_values = $wpdb->get_col(
+        $wpdb->prepare(
+            "SELECT DISTINCT meta_value FROM $wpdb->postmeta WHERE meta_key = %s",
+            $meta_key
+        )
+    );
+
+    $limpios = [];
+
+    foreach ($raw_values as $entry) {
+        if (empty($entry)) {
+            continue;
+        }
+
+        $maybe_array = maybe_unserialize($entry);
+        $items = is_array($maybe_array) ? $maybe_array : explode(',', $entry);
+
+        foreach ($items as $item) {
+            $original = trim($item);
+            if (!preg_match('/^[\p{L}\s]+$/u', $original)) {
+                continue;
+            }
+
+            // Versión comparativa sin acento
+            $clave = normalizar_comparacion($original);
+            $valor_preferido = mb_convert_case(trim($original), MB_CASE_TITLE, 'UTF-8');
+
+            // Si ya hay una forma preferida con acento, la conservamos
+            if (!isset($limpios[$clave]) || tiene_acentos($valor_preferido)) {
+                $limpios[$clave] = $valor_preferido;
+            }
+        }
+    }
+
+    ksort($limpios);
+    return array_values($limpios);
+}
+
+function normalizar_comparacion($texto)
+{
+    $sin_acentos = preg_replace(
+        ['/[áÁ]/u', '/[éÉ]/u', '/[íÍ]/u', '/[óÓ]/u', '/[úÚ]/u', '/[ñÑ]/u'],
+        ['a', 'e', 'i', 'o', 'u', 'n'],
+        mb_strtolower($texto, 'UTF-8')
+    );
+    return trim($sin_acentos);
+}
+
+function tiene_acentos($texto)
+{
+    return preg_match('/[áéíóúÁÉÍÓÚ]/u', $texto);
+}
+
+
+
+function mostrar_archivo_existente($campo, $label, $grupo, $mostrar_estado = true)
+{
+    if (empty($grupo[$campo])) {
+        return;
+    }
+
+    $archivo = $grupo[$campo];
+    $url = '';
+
+    // Detecta si es un array (objeto ACF de tipo archivo) o solo una URL
+    if (is_array($archivo) && isset($archivo['url'])) {
+        $url = $archivo['url'];
+    } elseif (is_string($archivo)) {
+        $url = $archivo;
+    }
+
+    if ($url) {
+        echo '<p style="padding: 0 20px;"><a href="' . esc_url($url) . '" target="_blank">📎 Ver ' . esc_html($label) . '</a></p>';
+    }
+
+    // Muestra estado del archivo (si aplica)
+    if ($mostrar_estado) {
+        // Soporta: estado_del_{campo}, estado_{campo}, y caso especial RFC
+        $posibles_claves = [];
+        if ($campo === 'rfc_archivo') {
+            $posibles_claves[] = 'estado_del_rfc';
+        }
+        $posibles_claves[] = 'estado_del_' . $campo;
+        $posibles_claves[] = 'estado_' . $campo;
+
+        $estado_val = null;
+        foreach ($posibles_claves as $k) {
+            if (isset($grupo[$k]) && $grupo[$k] !== '') {
+                $estado_val = $grupo[$k];
+                break;
+            }
+        }
+
+        if ($estado_val !== null && $estado_val !== '') {
+            $estado = mb_strtolower((string)$estado_val, 'UTF-8');
+            $color = match ($estado) {
+                'capturado' => '#f0ad4e',
+                'autorizado' => '#5cb85c',
+                'rechazado' => '#d9534f',
+                default => '#999'
+            };
+            echo '<p style="padding: 0 20px;"><strong>Estado:</strong> <span style="color:' . esc_attr($color) . '; font-weight:bold;">' . esc_html(ucfirst($estado)) . '</span></p>';
+        }
+    }
+}
+
+
+function mostrar_imagen_acf($campo, $grupo, $label = '', $tamano = 'medium')
+{
+    if (empty($grupo[$campo])) {
+        return;
+    }
+
+    $imagen = $grupo[$campo];
+
+    // echo $imagen . '' . $label . '' . $tamano;
+
+    // Si es un solo objeto (una imagen)
+    if (is_array($imagen) && isset($imagen['url'])) {
+        $url = $imagen['sizes'][$tamano] ?? $imagen['url'];
+        echo '<div class="imagen-acf">';
+        if ($label) {
+            echo '<p><strong>' . esc_html($label) . '</strong></p>';
+        }
+        echo '<img src="' . esc_url($url) . '" alt="' . esc_attr($imagen['alt'] ?? '') . '" style="max-width:100%; height:auto;">';
+        echo '</div>';
+    }
+
+    // Si es una galería o lista de imágenes (repeater o múltiple)
+    elseif (is_array($imagen) && isset($imagen[0])) {
+        if ($label) {
+            echo '<p><strong>' . esc_html($label) . '</strong></p>';
+        }
+        echo '<div class="galeria-acf" style="display: flex; flex-wrap: wrap; gap: 1rem;">';
+        foreach ($imagen as $img) {
+            $url = $img['sizes'][$tamano] ?? $img['url'];
+            echo '<img src="' . esc_url($url) . '" alt="' . esc_attr($img['alt'] ?? '') . '" style="max-width:150px; height:auto;">';
+        }
+        echo '</div>';
     }
 }

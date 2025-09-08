@@ -2,6 +2,16 @@
 require_once 'inc/instituciones.php';
 require_once 'inc/inicio.php';
 
+
+function donaciones_theme_setup()
+{
+
+    // Adds <title> tag support
+    add_theme_support('title-tag');
+
+}
+add_action('after_setup_theme', 'donaciones_theme_setup');
+
 add_action('wp_enqueue_scripts', function () {
     wp_enqueue_style('general', get_template_directory_uri() . '/css/general.css', [], null);
 
@@ -123,8 +133,9 @@ function recargar_tabla_instituciones()
 add_action('wp_ajax_get_acf_select_value', 'get_acf_select_value');
 function get_acf_select_value()
 {
-    if (!current_user_can('edit_posts'))
+    if (!current_user_can('edit_posts')) {
         wp_send_json_error();
+    }
 
     $post_id = intval($_GET['post_id']);
     $field_name = sanitize_text_field($_GET['field_name']);
@@ -145,80 +156,90 @@ function acf_ajax_select_estado_municipio_script()
     $ajax_url = admin_url('admin-ajax.php');
     $post_id = get_the_ID();
     ?>
-    <script>
-        (function ($) {
-            const estados = [
-                "Aguascalientes", "Baja California", "Baja California Sur", "Campeche",
-                "Chiapas", "Chihuahua", "Ciudad de México", "Coahuila", "Colima",
-                "Durango", "Estado de México", "Guanajuato", "Guerrero", "Hidalgo",
-                "Jalisco", "Michoacán", "Morelos", "Nayarit", "Nuevo León", "Oaxaca",
-                "Puebla", "Querétaro", "Quintana Roo", "San Luis Potosí", "Sinaloa",
-                "Sonora", "Tabasco", "Tamaulipas", "Tlaxcala", "Veracruz",
-                "Yucatán", "Zacatecas"
+<script>
+(function($) {
+    const estados = [
+        "Aguascalientes", "Baja California", "Baja California Sur", "Campeche",
+        "Chiapas", "Chihuahua", "Ciudad de México", "Coahuila", "Colima",
+        "Durango", "Estado de México", "Guanajuato", "Guerrero", "Hidalgo",
+        "Jalisco", "Michoacán", "Morelos", "Nayarit", "Nuevo León", "Oaxaca",
+        "Puebla", "Querétaro", "Quintana Roo", "San Luis Potosí", "Sinaloa",
+        "Sonora", "Tabasco", "Tamaulipas", "Tlaxcala", "Veracruz",
+        "Yucatán", "Zacatecas"
+    ];
+
+    const jsonUrl = '<?php echo get_template_directory_uri(); ?>/js/municipios-estado.json';
+    const ajaxUrl = '<?php echo $ajax_url; ?>';
+    const postID = <?php echo $post_id; ?>;
+
+    function poblarSelect($select, opciones, valorSeleccionado = null) {
+        $select.empty().append('<option value="">Selecciona una opción</option>');
+        opciones.forEach(e => {
+            const selected = (e === valorSeleccionado) ? ' selected' : '';
+            $select.append(`<option value="${e}"${selected}>${e}</option>`);
+        });
+    }
+
+    function obtenerValorACF(field_name, callback) {
+        $.get(ajaxUrl, {
+            action: 'get_acf_select_value',
+            post_id: postID,
+            field_name: field_name
+        }, function(response) {
+            if (response.success) {
+                callback(response.data);
+            } else {
+                callback(null);
+            }
+        });
+    }
+
+    $(document).ready(function() {
+        $.getJSON(jsonUrl, function(data) {
+            const pares = [{
+                    grupo: 'informacion_general',
+                    campoEstado: 'estado',
+                    campoMunicipio: 'municipio'
+                },
+                {
+                    grupo: 'informacion_de_contacto',
+                    campoEstado: 'entidad_federativa',
+                    campoMunicipio: 'ciudad'
+                }
             ];
 
-            const jsonUrl = '<?php echo get_template_directory_uri(); ?>/js/municipios-estado.json';
-            const ajaxUrl = '<?php echo $ajax_url; ?>';
-            const postID = <?php echo $post_id; ?>;
+            pares.forEach(par => {
+                const $estadoField = $(`.acf-field[data-name="${par.campoEstado}"]`);
+                const $estadoSelect = $estadoField.find('select');
+                const $grupo = $estadoField.closest('.acf-fields');
+                const $municipioSelect = $grupo.find(
+                    `.acf-field[data-name="${par.campoMunicipio}"] select`);
 
-            function poblarSelect($select, opciones, valorSeleccionado = null) {
-                $select.empty().append('<option value="">Selecciona una opción</option>');
-                opciones.forEach(e => {
-                    const selected = (e === valorSeleccionado) ? ' selected' : '';
-                    $select.append(`<option value="${e}"${selected}>${e}</option>`);
-                });
-            }
+                const fieldEstado = `${par.grupo}_${par.campoEstado}`;
+                const fieldMunicipio = `${par.grupo}_${par.campoMunicipio}`;
 
-            function obtenerValorACF(field_name, callback) {
-                $.get(ajaxUrl, {
-                    action: 'get_acf_select_value',
-                    post_id: postID,
-                    field_name: field_name
-                }, function (response) {
-                    if (response.success) {
-                        callback(response.data);
-                    } else {
-                        callback(null);
-                    }
-                });
-            }
+                obtenerValorACF(fieldEstado, function(estadoGuardado) {
+                    poblarSelect($estadoSelect, estados, estadoGuardado);
 
-            $(document).ready(function () {
-                $.getJSON(jsonUrl, function (data) {
-                    const pares = [
-                        { grupo: 'informacion_general', campoEstado: 'estado', campoMunicipio: 'municipio' },
-                        { grupo: 'informacion_de_contacto', campoEstado: 'entidad_federativa', campoMunicipio: 'ciudad' }
-                    ];
-
-                    pares.forEach(par => {
-                        const $estadoField = $(`.acf-field[data-name="${par.campoEstado}"]`);
-                        const $estadoSelect = $estadoField.find('select');
-                        const $grupo = $estadoField.closest('.acf-fields');
-                        const $municipioSelect = $grupo.find(`.acf-field[data-name="${par.campoMunicipio}"] select`);
-
-                        const fieldEstado = `${par.grupo}_${par.campoEstado}`;
-                        const fieldMunicipio = `${par.grupo}_${par.campoMunicipio}`;
-
-                        obtenerValorACF(fieldEstado, function (estadoGuardado) {
-                            poblarSelect($estadoSelect, estados, estadoGuardado);
-
-                            if (estadoGuardado) {
-                                const municipios = data[estadoGuardado] || [];
-                                obtenerValorACF(fieldMunicipio, function (municipioGuardado) {
-                                    poblarSelect($municipioSelect, municipios, municipioGuardado);
-                                });
-                            }
-
-                            $estadoSelect.on('change', function () {
-                                const nuevoEstado = $(this).val();
-                                const municipios = data[nuevoEstado] || [];
-                                poblarSelect($municipioSelect, municipios, null);
-                            });
+                    if (estadoGuardado) {
+                        const municipios = data[estadoGuardado] || [];
+                        obtenerValorACF(fieldMunicipio, function(
+                            municipioGuardado) {
+                            poblarSelect($municipioSelect, municipios,
+                                municipioGuardado);
                         });
+                    }
+
+                    $estadoSelect.on('change', function() {
+                        const nuevoEstado = $(this).val();
+                        const municipios = data[nuevoEstado] || [];
+                        poblarSelect($municipioSelect, municipios, null);
                     });
                 });
             });
-        })(jQuery);
-    </script>
-    <?php
+        });
+    });
+})(jQuery);
+</script>
+<?php
 }

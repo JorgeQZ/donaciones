@@ -195,11 +195,8 @@ footer img {
   background-color: #f2f2f2;
 }
 .container table tbody tr:hover {
-  background-color: #f96302;
+  background-color: rgb(216.25, 216.25, 216.25);
   cursor: pointer;
-}
-.container table tbody tr:hover td {
-  color: white;
 }
 .container table tbody tr td {
   padding: 10px;
@@ -223,4 +220,12 @@ footer img {
   border: 1px solid #f96302;
   border-radius: 2px;
   background-color: white;
+}
+.container table tbody tr td span {
+  background: white;
+  color: #f96302;
+  display: inline-block;
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 14px;
 }
