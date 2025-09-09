@@ -3,7 +3,6 @@
 if (!defined('ABSPATH')) {
     exit;
 }
-
 /** Handler formulario (POST) */
 function thd_handle_institucion_form()
 {
@@ -86,13 +85,13 @@ function thd_handle_institucion_form()
       ],
       'grupo_persona_contacto_uno' => [
         'persona_contacto_1' => $persona_contacto_1,
-        'correo_contacto_1' => $correo_contacto_1,
-        'telefono_1' => $telefono_1,
+        'correo_contacto_1'  => $correo_contacto_1,
+        'telefono_1'         => $telefono_1,
       ],
       'grupo_persona_contacto_2' => [
         'persona_contacto_2' => $persona_contacto_2,
-        'correo_contacto_2' => $correo_contacto_2,
-        'telefono_2' => $telefono_2,
+        'correo_contacto_2'  => $correo_contacto_2,
+        'telefono_2'         => $telefono_2,
       ],
       'redes_sociales' => [
         'web' => $web,'facebook' => $facebook,'instagram' => $instagram,'tiktok' => $tiktok
@@ -132,9 +131,124 @@ function thd_handle_institucion_form()
         update_field('archivos_requeridos', $requeridos, $post_id);
     }
 
-    // Redirect
-    $target = wp_get_referer() ?: get_permalink($post_id);
-    wp_safe_redirect(add_query_arg('status', 'success', $target));
+    /* =========================
+     * USUARIO (login = RFC)
+     * ========================= */
+    $rfc_norm = strtoupper(preg_replace('/[^A-Z0-9Ñ&]/u', '', (string)$rfc));
+    if (strlen($rfc_norm) < 10) {
+        update_post_meta($post_id, '_institucion_user_error', 'RFC vacío o inválido.');
+    } else {
+        // 1) Password del form o autogenerada
+        $pass1 = isset($p['inst_password']) ? (string)$p['inst_password'] : '';
+        $pass2 = isset($p['inst_password_confirm']) ? (string)$p['inst_password_confirm'] : '';
+        if (($pass1 !== '' || $pass2 !== '') && $pass1 !== $pass2) {
+            update_post_meta($post_id, '_institucion_user_error', 'Las contraseñas no coinciden (se generó una nueva).');
+            $pass1 = '';
+        }
+        $final_password = ($pass1 !== '') ? $pass1 : wp_generate_password(12, true, true);
+
+        // 2) Email único para la cuenta WP + email de notificación
+        $cands = array_filter([
+            is_email($correo_contacto) ? $correo_contacto : '',
+            is_email($correo_contacto_1) ? $correo_contacto_1 : '',
+            is_email($correo_contacto_2) ? $correo_contacto_2 : '',
+        ]);
+        $notify_email = $cands ? reset($cands) : '';
+
+        $domain = parse_url(home_url(), PHP_URL_HOST) ?: 'example.com';
+        if (strpos($domain, '.') === false) {
+            $domain = 'example.com';
+        }
+        $wp_email = ($notify_email && !email_exists($notify_email)) ? $notify_email : strtolower($rfc_norm).'@'.$domain;
+        if (email_exists($wp_email)) {
+            $wp_email = strtolower($rfc_norm) . '+' . time() . '@' . $domain;
+        }
+
+        // 3) ¿Existe ya un user con ese RFC?
+        $existing = get_user_by('login', $rfc_norm);
+        if ($existing) {
+            $existing_link = (int) get_user_meta($existing->ID, 'institucion_id', true);
+            if ($existing_link && $existing_link !== (int)$post_id) {
+                update_post_meta($post_id, '_institucion_user_error', 'El RFC ya está usado por otra institución.');
+            } else {
+                // Vincular y asignar como autor
+                update_post_meta($post_id, '_institucion_user_id', $existing->ID);
+                update_user_meta($existing->ID, 'institucion_id', $post_id);
+                update_user_meta($existing->ID, 'rfc', $rfc_norm);
+                wp_update_post(['ID' => $post_id, 'post_author' => $existing->ID]);
+
+                // Si hay pass en el form, resetear
+                if ($pass1 !== '') {
+                    wp_set_password($final_password, $existing->ID);
+                    if ($notify_email) {
+                        @wp_mail(
+                            $notify_email,
+                            'Acceso actualizado',
+                            "Hola,\n\nTu acceso:\nUsuario (RFC): {$rfc_norm}\nContraseña: {$final_password}\nAcceso: ".wp_login_url()."\n"
+                        );
+                    }
+                    set_transient('thd_inst_pw_'.$post_id, ['rfc' => $rfc_norm,'password' => $final_password], 10 * MINUTE_IN_SECONDS);
+                }
+            }
+        } else {
+            // 4) Crear usuario nuevo
+            $display_name = $nombre_fiscal ?: $rfc_norm;
+            error_log('USER_CREATE RFC='.$rfc_norm.' | email='.$wp_email);
+
+            $user_id = wp_insert_user([
+                'user_login'   => $rfc_norm,
+                'user_pass'    => $final_password,
+                'user_email'   => $wp_email,
+                'display_name' => $display_name,
+                'nickname'     => $display_name,
+                'role'         => 'subscriber',
+            ]);
+
+            if (is_wp_error($user_id)) {
+                update_post_meta($post_id, '_institucion_user_error', $user_id->get_error_message());
+            } else {
+                // Vincular y autor
+                update_post_meta($post_id, '_institucion_user_id', $user_id);
+                update_user_meta($user_id, 'institucion_id', $post_id);
+                update_user_meta($user_id, 'rfc', $rfc_norm);
+                wp_update_post(['ID' => $post_id, 'post_author' => $user_id]);
+
+                // Redundancia útil
+                update_post_meta($post_id, 'rfc', $rfc_norm);
+                if ($notify_email) {
+                    update_post_meta($post_id, 'correo', sanitize_email($notify_email));
+                }
+
+                // Notificar + mostrar 1 vez
+                if ($notify_email) {
+                    @wp_mail(
+                        $notify_email,
+                        'Tus credenciales de acceso',
+                        "Hola,\n\nSe creó tu acceso:\nUsuario (RFC): {$rfc_norm}\nContraseña: {$final_password}\nAcceso: ".wp_login_url()."\n"
+                    );
+                }
+                set_transient('thd_inst_pw_'.$post_id, ['rfc' => $rfc_norm,'password' => $final_password], 10 * MINUTE_IN_SECONDS);
+            }
+        }
+    }
+
+    // Redirect directo al single de la institución recién creada
+    $permalink = get_permalink($post_id);
+    $permalink = add_query_arg('status', 'success', $permalink);
+    // Programar recordatorio automático en 7 días
+    if (empty(thd_institucion_missing_fields($post_id))) {
+        thd_cancel_institucion_reminder($post_id);
+    } else {
+        thd_schedule_institucion_reminder($post_id);
+    }
+
+
+    if ($permalink) {
+        wp_safe_redirect($permalink);
+        exit;
+    }
+
+    wp_safe_redirect(get_post_type_archive_link('institucion') ?: home_url('/'));
     exit;
 }
 
@@ -241,29 +355,44 @@ function thd_cambiar_estado_archivo()
         acf_get_store('fields')->reset();
     }
 
-    // Evita que caches intermedias guarden la respuesta del redirect
+
+    $uid = get_current_user_id();
+    if ($uid) {
+        $tkey = "thd_estados_bypass_{$uid}_{$institucion_id}";
+        $map = get_transient($tkey);
+        if (!is_array($map)) {
+            $map = array();
+        }
+        $map[$archivo_key] = $target_value;   // ej. 'acta_constitutiva' => 'autorizado'
+        set_transient($tkey, $map, 60);       // TTL 60s
+    }
+
+    // Redirect
     nocache_headers();
-
-    // 🚀 Redirect con "cache-buster" único
-    $redirect = add_query_arg(array(
-      'status' => 'success',
-      'msg'    => 'Estado actualizado',
-      'r'      => wp_generate_uuid4(),  // cache-buster
-    ), get_permalink($institucion_id));
-
+    $redirect = add_query_arg(array('status' => 'success','msg' => 'Estado actualizado','r' => wp_generate_uuid4()), get_permalink($institucion_id));
     wp_safe_redirect($redirect);
     exit;
 }
 
+
 function thd_estado_archivo($post_id, $campo)
 {
+    // 1) Bypass por usuario (si existe)
+    $uid = get_current_user_id();
+    if ($uid) {
+        $tkey = "thd_estados_bypass_{$uid}_{$post_id}";
+        $map = get_transient($tkey);
+        if (is_array($map) && array_key_exists($campo, $map)) {
+            return $map[$campo]; // 'autorizado' | 'rechazado' | 'capturado'
+        }
+    }
+    // 2) Meta fresco (todas las variantes)
     $keys = array();
     if ($campo === 'rfc_archivo') {
         $keys[] = 'archivos_requeridos_estado_del_rfc';
     }
     $keys[] = 'archivos_requeridos_estado_'.$campo;
     $keys[] = 'archivos_requeridos_estado_del_'.$campo;
-
     foreach ($keys as $k) {
         $v = get_post_meta($post_id, $k, true);
         if ($v !== '' && $v !== null) {
@@ -272,6 +401,7 @@ function thd_estado_archivo($post_id, $campo)
     }
     return 'capturado';
 }
+
 
 // AJAX: cambiar estado de un archivo (sin recargar)
 add_action('wp_ajax_thd_cambiar_estado_archivo', 'thd_ajax_cambiar_estado_archivo');
@@ -356,7 +486,117 @@ function thd_ajax_cambiar_estado_archivo()
         acf_flush_value_cache($institucion_id);
     }
 
+
+    // 🔽🔽🔽 PÉGALO AQUÍ (bypass por usuario) 🔽🔽🔽
+    $uid = get_current_user_id();
+    if ($uid) {
+        $tkey = "thd_estados_bypass_{$uid}_{$institucion_id}";
+        $map = get_transient($tkey);
+        if (!is_array($map)) {
+            $map = array();
+        }
+        $map[$archivo_key] = $target_value;
+        set_transient($tkey, $map, 60);
+    }
+    // 🔼🔼🔼 FIN BYPASS 🔼🔼🔼
+
     // Responder con el badge listo para pintar
     $badge_html = function_exists('thd_badge_estado') ? thd_badge_estado($target_value) : ucfirst($nuevo_estado);
     wp_send_json_success(['estado' => $target_value, 'badge' => $badge_html]);
+}
+
+
+// Admin puede actualizar la contraseña del usuario ligado a la institución
+add_action('wp_ajax_thd_admin_reset_inst_password', 'thd_admin_reset_inst_password');
+function thd_admin_reset_inst_password()
+{
+    if (!is_user_logged_in()) {
+        wp_send_json_error(['msg' => 'Debes iniciar sesión.'], 401);
+    }
+    // Cambia el permiso si quieres permitir a editores:
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(['msg' => 'Sin permisos.'], 403);
+    }
+    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'thd_admin_reset_inst_password')) {
+        wp_send_json_error(['msg' => 'Nonce inválido.'], 403);
+    }
+
+    $post_id = isset($_POST['post_id']) ? (int) $_POST['post_id'] : 0;
+    if (!$post_id || get_post_type($post_id) !== 'institucion') {
+        wp_send_json_error(['msg' => 'Institución inválida.'], 400);
+    }
+
+    // Ubicar usuario ligado
+    $user_id = (int) get_post_meta($post_id, '_institucion_user_id', true);
+    if (!$user_id) {
+        $u = get_users([
+            'number'    => 1,
+            'meta_key'  => 'institucion_id',
+            'meta_value' => $post_id,
+            'fields'    => 'ID',
+        ]);
+        $user_id = !empty($u) ? (int) $u[0] : 0;
+    }
+    if (!$user_id) {
+        wp_send_json_error(['msg' => 'No hay usuario ligado a esta institución.'], 404);
+    }
+
+    // Contraseña nueva (del form) o autogenerada
+    $p1 = isset($_POST['password']) ? (string) $_POST['password'] : '';
+    $p2 = isset($_POST['password_confirm']) ? (string) $_POST['password_confirm'] : '';
+    if (($p1 !== '' || $p2 !== '') && $p1 !== $p2) {
+        wp_send_json_error(['msg' => 'Las contraseñas no coinciden.'], 422);
+    }
+    $new_pass = ($p1 !== '') ? $p1 : wp_generate_password(12, true, true);
+
+    // Cambiar password
+    wp_set_password($new_pass, $user_id);
+
+    // Preparar datos para notificación y/o “flash” en pantalla
+    $rfc = get_user_meta($user_id, 'rfc', true);
+    if (!$rfc) {
+        $rfc = get_post_meta($post_id, 'rfc', true);
+    }
+
+    // (Opcional) enviar correo al contacto
+    if (!function_exists('thd_institucion_get_contact_email')) {
+        function thd_institucion_get_contact_email($post_id)
+        {
+            $ic = function_exists('get_field') ? (array) get_field('informacion_de_contacto', $post_id) : [];
+            $cands = [];
+            if (!empty($ic['datos_del_presidente']['correo_contacto'])) {
+                $cands[] = $ic['datos_del_presidente']['correo_contacto'];
+            }
+            if (!empty($ic['grupo_persona_contacto_uno']['correo_contacto_1'])) {
+                $cands[] = $ic['grupo_persona_contacto_uno']['correo_contacto_1'];
+            }
+            if (!empty($ic['grupo_persona_contacto_2']['correo_contacto_2'])) {
+                $cands[] = $ic['grupo_persona_contacto_2']['correo_contacto_2'];
+            }
+            $cands[] = get_post_meta($post_id, 'correo', true);
+            foreach ($cands as $c) {
+                if ($c && is_email($c)) {
+                    return $c;
+                }
+            }
+            return '';
+        }
+    }
+    $to = thd_institucion_get_contact_email($post_id);
+    if ($to) {
+        @wp_mail(
+            $to,
+            'Tu contraseña fue actualizada',
+            "Hola,\n\nTu acceso fue actualizado:\nUsuario (RFC): {$rfc}\nContraseña: {$new_pass}\nAcceso: ".wp_login_url(get_permalink($post_id))."\n"
+        );
+    }
+
+    // (Opcional) dejar transient para mostrar en el single una sola vez
+    set_transient('thd_inst_pw_'.$post_id, ['rfc' => $rfc, 'password' => $new_pass], 10 * MINUTE_IN_SECONDS);
+
+    wp_send_json_success([
+        'msg'      => 'Contraseña actualizada correctamente.',
+        'password' => $new_pass, // se devuelve porque solo el admin puede llamar este endpoint
+        'rfc'      => $rfc,
+    ]);
 }

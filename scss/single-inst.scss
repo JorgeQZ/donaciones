@@ -358,3 +358,13 @@
 .divider {
     margin: 40px 0;
 }
+
+.box-admin-password{
+    button{
+        appearance: none;
+        border: none;
+        padding: 10px 20px;
+        background-color: $orange;
+        color: white;
+    }
+}

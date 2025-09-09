@@ -4,22 +4,6 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-/** CPT */
-add_action('init', function () {
-    register_post_type('institucion', [
-      'labels' => [
-        'name' => 'Instituciones',
-        'singular_name' => 'Institución',
-        'menu_name' => 'Instituciones',
-      ],
-      'public' => true, 'show_ui' => true, 'menu_position' => 20,
-      'menu_icon' => 'dashicons-building',
-      'supports' => ['title'],
-      'has_archive' => false, 'publicly_queryable' => true, 'show_in_rest' => true,
-      'rewrite' => ['slug' => 'institucion']
-    ]);
-});
-
 /** Columnas admin */
 add_filter('manage_institucion_posts_columns', function ($c) {
     return [

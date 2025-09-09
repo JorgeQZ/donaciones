@@ -1,6 +1,7 @@
 <?php
 require_once get_template_directory() . '/inc/instituciones.php';
 require_once get_template_directory() . '/inc/inicio.php';
+require_once get_template_directory() . '/inc/recordatorio.php';
 
 
 function donaciones_theme_setup()
@@ -66,6 +67,36 @@ add_action('wp_enqueue_scripts', function () {
 
         wp_enqueue_style('general-admin', get_template_directory_uri() . '/css/general-admin.css', [], null);
         wp_enqueue_style('single-inst', get_template_directory_uri() . '/css/single-inst.css', [], null);
+
+
+        $post_id = get_queried_object_id();
+
+        // Obtén valores desde ACF (ajusta claves si difieren)
+        $ig = get_field('informacion_general', $post_id) ?: array();
+        $ic = get_field('informacion_de_contacto', $post_id) ?: array();
+
+        $IG_municipio = $ig['municipio'] ?? '';
+        $IG_estado    = $ig['estado'] ?? '';
+        $IC_ciudad    = $ic['ciudad'] ?? '';
+        $IC_entidad   = $ic['entidad_federativa'] ?? '';
+
+        wp_enqueue_script(
+            'thd-instituciones',
+            get_template_directory_uri() . '/js/instituciones.js',
+            array(),
+            filemtime(get_template_directory() . '/js/instituciones.js'),
+            true
+        );
+
+        wp_localize_script('thd-instituciones', 'THD_INST', array(
+            'jsonMunicipios' => get_template_directory_uri().'/js/municipios-estado.json',
+            'jsonEstados'    => get_template_directory_uri().'/js/estados.json',
+            'IG_municipio'   => $IG_municipio,
+            'IG_estado'      => $IG_estado,
+            'IC_ciudad'      => $IC_ciudad,
+            'IC_entidad'     => $IC_entidad,
+            'ajaxUrl'        => admin_url('admin-ajax.php'),
+        ));
 
 
     }
@@ -285,4 +316,53 @@ add_action('send_headers', function () {
         header_remove('ETag');
         nocache_headers();
     }
+});
+
+
+
+// 1) Después de login, manda al single de su institución
+add_filter('login_redirect', function ($redirect_to, $request, $user) {
+    if (is_wp_error($user) || !$user instanceof WP_User) {
+        return $redirect_to;
+    }
+
+    // Solo forzamos a subscribers (admins/editors se quedan con su flujo normal)
+    if (!in_array('subscriber', (array)$user->roles, true)) {
+        return $redirect_to;
+    }
+
+    $inst_id = (int) get_user_meta($user->ID, 'institucion_id', true);
+    if ($inst_id && get_post_type($inst_id) === 'institucion') {
+        $url = get_permalink($inst_id);
+        if ($url) {
+            return $url;
+        }
+    }
+
+    // Fallback
+    return home_url('/');
+}, 99, 3);
+
+// 2) Evita que el subscriber entre a /wp-admin y redirige a su institución
+add_action('admin_init', function () {
+    if (defined('DOING_AJAX') && DOING_AJAX) {
+        return;
+    } // permitir admin-ajax
+    if (!is_user_logged_in()) {
+        return;
+    }
+
+    $user = wp_get_current_user();
+    if (!in_array('subscriber', (array)$user->roles, true)) {
+        return;
+    }
+
+    $inst_id = (int) get_user_meta($user->ID, 'institucion_id', true);
+    if ($inst_id && get_post_type($inst_id) === 'institucion') {
+        wp_safe_redirect(get_permalink($inst_id));
+        exit;
+    }
+
+    wp_safe_redirect(home_url('/'));
+    exit;
 });

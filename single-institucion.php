@@ -5,6 +5,9 @@ if (function_exists('thd_render_notice_from_query')) {
     echo thd_render_notice_from_query();
 }
 
+$post_id = get_the_ID();
+$nonce   = wp_create_nonce('thd_send_reminder');
+$ajax    = admin_url('admin-ajax.php');
 // ————————————————————————————————————————
 // Validación de post actual
 // ————————————————————————————————————————
@@ -159,6 +162,17 @@ if (
             <span>El RFC registrado será su usuario de acceso</span>
         </p>
 
+        <?php
+        $creds = get_transient('thd_inst_pw_' . get_the_ID());
+if (is_array($creds) && !empty($creds['rfc']) && !empty($creds['password'])) {
+    delete_transient('thd_inst_pw_' . get_the_ID());
+    echo '<div class="notice success" style="padding:12px;border:1px solid #46b450;background:#f6ffed;margin-bottom:16px;">'
+    . '<strong>Usuario listo.</strong><br>'
+    . 'Usuario (RFC): <code>' . esc_html($creds['rfc']) . '</code><br>'
+    . 'Contraseña: <code>' . esc_html($creds['password']) . '</code><br>'
+    . '<a href="' . esc_url(wp_login_url()) . '">Ir a iniciar sesión</a>'
+    . '</div>';
+}?>
         <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data">
             <?php wp_nonce_field('registrar_institucion', 'institucion_nonce'); ?>
             <input type="hidden" name="action" value="registrar_institucion">
@@ -394,11 +408,11 @@ if (
                         <div class="custom-select" data-name="grupo_social">
                             <div class="selected-placeholder">
                                 <?php
-                                if (!empty($necesidades['grupo_social'])):
-                                    foreach ($necesidades['grupo_social'] as $grupo):
-                                        echo '<span class="tag" data-value="' . esc_attr($grupo) . '">' . esc_html(ucfirst($grupo)) . '<span class="remove-tag">×</span></span>';
-                                    endforeach;
-                                endif;
+                        if (!empty($necesidades['grupo_social'])):
+                            foreach ($necesidades['grupo_social'] as $grupo):
+                                echo '<span class="tag" data-value="' . esc_attr($grupo) . '">' . esc_html(ucfirst($grupo)) . '<span class="remove-tag">×</span></span>';
+                            endforeach;
+                        endif;
 ?>
                             </div>
                             <input type="text" class="custom-input-tag" placeholder="Escribe y presiona Enter" />
@@ -644,23 +658,46 @@ endforeach;
             </div>
 
             <button type="submit" name="submit_institucion">ALTA COMPLETA</button>
-            <button type="button" class="recordatorio" name="recordatorio">ENVIAR RECORDATORIO</button>
+            <button type="button" class="recordatorio" data-post="<?php echo esc_attr($post_id); ?>"
+                data-nonce="<?php echo esc_attr($nonce); ?>" data-ajax="<?php echo esc_url($ajax); ?>">
+                ENVIAR RECORDATORIO
+            </button>
 
         </form>
+        <div id="thd-reminder-msg" style="margin-top:10px;"></div>
 
+        <?php if (current_user_can('manage_options')) :
+            $post_id = get_the_ID();
+            $nonce   = wp_create_nonce('thd_admin_reset_inst_password');
+            $ajax    = admin_url('admin-ajax.php');
+            ?>
         <hr class="divider">
-        <form action="">
+
+        <div class="box-admin-password" style="margin:20px 0;">
+            <div class="title-cont">
+                <p class="title">Actualizar contraseña</p>
+            </div>
+
+            <p style="margin:6px 0; font-size:12px; color:#666;">Si dejas los campos vacíos y presionas “Actualizar”, se
+                generará una contraseña segura automáticamente.</p>
             <div class="row">
                 <div class="input-cont half-w">
-                    <label for="">*Contraseña</label>
-                    <input type="password" name="" id="">
+                    <label>Nueva contraseña</label>
+                    <input type="password" id="instAdminPassword" style="width:100%;">
                 </div>
                 <div class="input-cont half-w">
-                    <label for="">*Confirmar Contraseña</label>
-                    <input type="password" name="" id="">
+                    <label>Confirmar contraseña</label>
+                    <input type="password" id="instAdminPassword2" style="width:100%;">
                 </div>
             </div>
-        </form>
+            <div style="margin-top:10px;">
+                <button type="button" id="instAdminGen" style="margin-right:8px;">Generar segura</button>
+                <button type="button" id="instAdminToggle" style="margin-right:8px;">Mostrar/Ocultar</button>
+                <button type="button" id="instAdminSubmit" class="button button-primary">Actualizar contraseña</button>
+            </div>
+            <div id="instAdminMsg" style="margin-top:10px;"></div>
+        </div>
+        <hr class="divider">
 
         <?php if (!empty($puede_ver_estados)): ?>
         <div class="title-cont">
@@ -674,16 +711,16 @@ endforeach;
         <?php endif; ?>
 
         <?php
-        // Config de filas
-        $files = [
-            ['key' => 'acta_constitutiva',      'label' => 'Acta Constitutiva'],
-            ['key' => 'comprobante_domicilio',  'label' => 'Comprobante de Domicilio'],
-            ['key' => 'deducible',              'label' => 'Copia Recibo Deducible'],
-            ['key' => 'apoderado_legal',        'label' => 'Identificación del apoderado legal'],
-            ['key' => 'institucion_excel',      'label' => 'Solicitud de alta de institución'],
-            ['key' => 'certificado_donaciones', 'label' => 'Certificado de Donaciones'],
-            ['key' => 'rfc_archivo',            'label' => 'RFC'],
-        ];
+            // Config de filas
+            $files = [
+                ['key' => 'acta_constitutiva',      'label' => 'Acta Constitutiva'],
+                ['key' => 'comprobante_domicilio',  'label' => 'Comprobante de Domicilio'],
+                ['key' => 'deducible',              'label' => 'Copia Recibo Deducible'],
+                ['key' => 'apoderado_legal',        'label' => 'Identificación del apoderado legal'],
+                ['key' => 'institucion_excel',      'label' => 'Solicitud de alta de institución'],
+                ['key' => 'certificado_donaciones', 'label' => 'Certificado de Donaciones'],
+                ['key' => 'rfc_archivo',            'label' => 'RFC'],
+            ];
             $hay_archivos = false;
             foreach ($files as $f) {
                 if (thd_tiene_archivo($archivos_requeridos[$f['key']] ?? null)) {
@@ -785,5 +822,133 @@ endforeach;
 
     </div>
 </div>
+
+
+<script>
+(function() {
+    var p1 = document.getElementById('instAdminPassword');
+    var p2 = document.getElementById('instAdminPassword2');
+    var btnG = document.getElementById('instAdminGen');
+    var btnT = document.getElementById('instAdminToggle');
+    var btnS = document.getElementById('instAdminSubmit');
+    var msg = document.getElementById('instAdminMsg');
+    var ajax = <?php echo json_encode($ajax); ?>;
+    var nonce = <?php echo json_encode($nonce); ?>;
+    var pid = <?php echo (int) $post_id; ?>;
+
+    function genPass(len) {
+        var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%*?';
+        var out = '';
+        for (var i = 0; i < len; i++) out += chars.charAt(Math.floor(Math.random() * chars.length));
+        return out;
+    }
+
+    function showMsg(text, ok) {
+        msg.innerHTML = text;
+        msg.style.padding = '10px';
+        msg.style.border = '1px solid ' + (ok ? '#46b450' : '#dc3232');
+        msg.style.background = ok ? '#f6ffed' : '#fff5f5';
+    }
+
+    if (btnG) btnG.addEventListener('click', function() {
+        var t = genPass(12);
+        p1.value = t;
+        p2.value = t;
+    });
+    if (btnT) btnT.addEventListener('click', function() {
+        var type = p1.type === 'password' ? 'text' : 'password';
+        p1.type = type;
+        p2.type = type;
+    });
+    if (btnS) btnS.addEventListener('click', function() {
+        btnS.disabled = true;
+        var body = new URLSearchParams({
+            action: 'thd_admin_reset_inst_password',
+            nonce: nonce,
+            post_id: pid,
+            password: p1.value || '',
+            password_confirm: p2.value || ''
+        });
+        fetch(ajax, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: body.toString()
+            })
+            .then(r => r.json())
+            .then(j => {
+                if (j && j.success) {
+                    var shown = j.data && j.data.password ? ('<br><small>Nueva contraseña: <code>' + j
+                        .data.password + '</code></small>') : '';
+                    showMsg('Contraseña actualizada correctamente.' + shown, true);
+                    // Limpia campos
+                    p1.value = '';
+                    p2.value = '';
+                } else {
+                    var m = (j && j.data && j.data.msg) ? j.data.msg : 'No se pudo actualizar.';
+                    showMsg(m, false);
+                }
+            })
+            .catch(() => showMsg('Error de red.', false))
+            .finally(() => {
+                btnS.disabled = false;
+            });
+    });
+})();
+</script>
+<?php endif; ?>
+<script>
+(function() {
+    function showMsg(text, ok) {
+        var box = document.getElementById('thd-reminder-msg');
+        if (!box) return alert(text);
+        box.innerHTML = text;
+        box.style.padding = '10px';
+        box.style.border = '1px solid ' + (ok ? '#46b450' : '#dc3232');
+        box.style.background = ok ? '#f6ffed' : '#fff5f5';
+        box.style.marginTop = '10px';
+    }
+
+    var btn = document.querySelector('button.recordatorio');
+    if (!btn) return;
+    btn.addEventListener('click', function() {
+        var postId = this.getAttribute('data-post');
+        var nonce = this.getAttribute('data-nonce');
+        var ajax = this.getAttribute('data-ajax');
+
+        this.disabled = true;
+        var old = this.textContent;
+        this.textContent = 'Enviando...';
+
+        fetch(ajax, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: new URLSearchParams({
+                    action: 'thd_send_inst_reminder',
+                    post_id: postId,
+                    nonce: nonce
+                })
+            })
+            .then(r => r.json())
+            .then(json => {
+                if (json && json.success) {
+                    showMsg(json.data.msg || 'Recordatorio enviado.', true);
+                } else {
+                    var msg = (json && json.data && json.data.msg) ? json.data.msg :
+                        'No se pudo enviar.';
+                    showMsg(msg, false);
+                }
+            })
+            .catch(() => showMsg('Error de red.', false))
+            .finally(() => {
+                btn.disabled = false;
+                btn.textContent = old;
+            });
+    });
+})();
+</script>
 
 <?php get_footer('admin'); ?>
