@@ -697,12 +697,8 @@ endforeach;
             </div>
             <div id="instAdminMsg" style="margin-top:10px;"></div>
         </div>
-        <hr class="divider">
 
-        <?php if (!empty($puede_ver_estados)): ?>
-        <div class="title-cont">
-            <p class="title">Tracking de status</p>
-        </div>
+
 
         <?php if (!empty($mensaje_estado)): ?>
         <div class="notice" style="margin:10px 0;padding:8px;background:#f6f7f7;border:1px solid #ccd0d4;">
@@ -731,6 +727,12 @@ endforeach;
             ?>
 
         <?php if ($hay_archivos): ?>
+
+        <?php if (!empty($puede_ver_estados)): ?>
+        <hr class="divider">
+        <div class="title-cont">
+            <p class="title">Tracking de status</p>
+        </div>
         <table class="tracking-estatus">
             <thead>
                 <tr>

@@ -229,3 +229,19 @@ footer img {
   font-weight: 600;
   font-size: 14px;
 }
+.container table tbody tr td .btn-reminder {
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+  border: none;
+  background-color: #f96302;
+  color: #fff;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-family: "Helvetica Neue LT Std BdCn";
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.container table tbody tr td .btn-reminder:hover {
+  background-color: rgb(223.703187251, 88.9422310757, 1.796812749);
+}

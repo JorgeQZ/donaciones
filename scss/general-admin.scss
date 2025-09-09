@@ -177,6 +177,22 @@ footer {
                         font-weight:600;
                         font-size: 14px;
                     }
+
+                    .btn-reminder{
+
+                        appearance: none;
+                        border: none;
+                        background-color: $orange;
+                        color: #fff;
+                        padding: 10px 20px;
+                        font-size: 14px;
+                        font-family: $ff-bdcn;
+                        text-transform: uppercase;
+                        cursor: pointer;
+                        &:hover{
+                            background-color: darken($orange, 5%);
+                        }
+                    }
                 }
             }
         }

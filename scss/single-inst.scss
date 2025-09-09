@@ -366,5 +366,12 @@
         padding: 10px 20px;
         background-color: $orange;
         color: white;
+        font-family: $ff-bdcn;
+        text-transform: uppercase;
+        cursor: pointer;
+        &:hover{
+            background-color: darken($orange, 5%);
+
+        }
     }
 }

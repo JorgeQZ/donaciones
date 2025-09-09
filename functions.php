@@ -177,14 +177,17 @@ add_action('wp_enqueue_scripts', 'cargar_js_header');
 /**
  * Recargar tabla de instituciones mediante AJAX
  */
-add_action('wp_ajax_recargar_tabla_instituciones', 'recargar_tabla_instituciones');
-add_action('wp_ajax_nopriv_recargar_tabla_instituciones', 'recargar_tabla_instituciones');
-
-function recargar_tabla_instituciones()
-{
+// Recarga de tabla (renderiza templates/tabla-instituciones.php)
+add_action('wp_ajax_recargar_tabla_instituciones', function () {
+    check_ajax_referer('recargar_tabla_instituciones');
+    // Seguridad extra: solo admins
+    if (! current_user_can('manage_options')) {
+        wp_send_json_error('Sin permisos', 403);
+    }
+    // Output del partial
     get_template_part('templates/tabla-instituciones');
     wp_die();
-}
+});
 
 
 /**
