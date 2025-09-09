@@ -1,6 +1,6 @@
 <?php
-require_once 'inc/instituciones.php';
-require_once 'inc/inicio.php';
+require_once get_template_directory() . '/inc/instituciones.php';
+require_once get_template_directory() . '/inc/inicio.php';
 
 
 function donaciones_theme_setup()
@@ -25,6 +25,35 @@ add_action('wp_enqueue_scripts', function () {
 
     if (is_singular('institucion')) {
         wp_enqueue_style('single-inst', get_template_directory_uri() . '/css/single-inst.css', [], null);
+
+        $post_id = get_queried_object_id();
+
+        // Obtén valores desde ACF (ajusta claves si difieren)
+        $ig = get_field('informacion_general', $post_id) ?: array();
+        $ic = get_field('informacion_de_contacto', $post_id) ?: array();
+
+        $IG_municipio = $ig['municipio'] ?? '';
+        $IG_estado    = $ig['estado'] ?? '';
+        $IC_ciudad    = $ic['ciudad'] ?? '';
+        $IC_entidad   = $ic['entidad_federativa'] ?? '';
+
+        wp_enqueue_script(
+            'thd-instituciones',
+            get_template_directory_uri() . '/js/instituciones.js',
+            array(),
+            filemtime(get_template_directory() . '/js/instituciones.js'),
+            true
+        );
+
+        wp_localize_script('thd-instituciones', 'THD_INST', array(
+            'jsonMunicipios' => get_template_directory_uri().'/js/municipios-estado.json',
+            'jsonEstados'    => get_template_directory_uri().'/js/estados.json',
+            'IG_municipio'   => $IG_municipio,
+            'IG_estado'      => $IG_estado,
+            'IC_ciudad'      => $IC_ciudad,
+            'IC_entidad'     => $IC_entidad,
+            'ajaxUrl'        => admin_url('admin-ajax.php'),
+        ));
 
     }
 
@@ -243,3 +272,17 @@ function acf_ajax_select_estado_municipio_script()
 </script>
 <?php
 }
+
+
+// Si viene ?r=... o el usuario está logueado viendo una institución, no cachéar esta vista
+add_action('send_headers', function () {
+    // No cachear single de instituciones cuando el user está logueado o viene con ?r=
+    if ((isset($_GET['r']) && $_GET['r'] !== '') || (is_user_logged_in() && is_singular('institucion'))) {
+        if (!defined('DONOTCACHEPAGE')) {
+            define('DONOTCACHEPAGE', true);
+        }
+        header_remove('Last-Modified');
+        header_remove('ETag');
+        nocache_headers();
+    }
+});

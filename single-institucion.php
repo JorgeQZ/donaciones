@@ -1,6 +1,10 @@
 <?php
 get_header('admin');
 
+if (function_exists('thd_render_notice_from_query')) {
+    echo thd_render_notice_from_query();
+}
+
 // ————————————————————————————————————————
 // Validación de post actual
 // ————————————————————————————————————————
@@ -53,186 +57,12 @@ $tipo_institucion = $info_general['tipo_institucion'] ?? '';
 $tipos_institucion = ['asociacion civil','fundacion','iap','otro'];
 
 // ————————————————————————————————————————
-// Helpers de presentación (archivos, imagen, badges, fecha)
-// ————————————————————————————————————————
-if (!function_exists('mostrar_archivo_existente')) {
-    /**
-     * Muestra link al archivo y (opcionalmente) su estado.
-     * $grupo = array de 'archivos_requeridos' o 'presentacion_institucional'
-     */
-    function mostrar_archivo_existente($campo, $label, $grupo, $mostrar_estado = true)
-    {
-        if (empty($grupo[$campo])) {
-            return;
-        }
-
-        $archivo = $grupo[$campo];
-        $url = '';
-
-        // Detecta si es array (objeto ACF de tipo archivo) o solo una URL
-        if (is_array($archivo) && isset($archivo['url'])) {
-            $url = $archivo['url'];
-        } elseif (is_string($archivo)) {
-            $url = $archivo;
-        }
-
-        if ($url) {
-            echo '<p><a href="' . esc_url($url) . '" target="_blank">📎 Ver ' . esc_html($label) . '</a></p>';
-        }
-
-        // Estado del archivo (si aplica y si el usuario tiene permiso de ver)
-        if ($mostrar_estado) {
-            // Soporta: estado_del_{campo}, estado_{campo}, y caso especial RFC
-            $posibles = [];
-            if ($campo === 'rfc_archivo') {
-                $posibles[] = 'estado_del_rfc';
-            }
-            $posibles[] = 'estado_del_' . $campo;
-            $posibles[] = 'estado_' . $campo;
-
-            $estado_val = null;
-            foreach ($posibles as $k) {
-                if (isset($grupo[$k]) && $grupo[$k] !== '') {
-                    $estado_val = $grupo[$k];
-                    break;
-                }
-            }
-            if ($estado_val === null || $estado_val === '') {
-                $estado_val = 'Capturado';
-            }
-
-            $estado = mb_strtolower((string)$estado_val, 'UTF-8');
-            $color = match ($estado) {
-                'capturado'  => '#f0ad4e',
-                'autorizado' => '#5cb85c',
-                'rechazado'  => '#d9534f',
-                default      => '#999'
-            };
-            echo '<p><strong>Estado:</strong> <span style="color:' . esc_attr($color) . '; font-weight:bold;">' . esc_html(ucfirst($estado)) . '</span></p>';
-        }
-    }
-}
-
-if (!function_exists('mostrar_imagen_acf')) {
-    function mostrar_imagen_acf($campo, $grupo, $label = '', $tamano = 'medium')
-    {
-        if (empty($grupo[$campo])) {
-            return;
-        }
-        $imagen = $grupo[$campo];
-
-        if (is_array($imagen) && isset($imagen['url'])) {
-            $url = $imagen['sizes'][$tamano] ?? $imagen['url'];
-            echo '<div class="imagen-acf">';
-            if ($label) {
-                echo '<p><strong>' . esc_html($label) . '</strong></p>';
-            }
-            echo '<img src="' . esc_url($url) . '" alt="' . esc_attr($imagen['alt'] ?? '') . '" style="max-width:100%; height:auto;">';
-            echo '</div>';
-        } elseif (is_array($imagen) && isset($imagen[0])) {
-            if ($label) {
-                echo '<p><strong>' . esc_html($label) . '</strong></p>';
-            }
-            echo '<div class="galeria-acf" style="display: flex; flex-wrap: wrap; gap: 1rem;">';
-            foreach ($imagen as $img) {
-                $url = $img['sizes'][$tamano] ?? $img['url'];
-                echo '<img src="' . esc_url($url) . '" alt="' . esc_attr($img['alt'] ?? '') . '" style="max-width:150px; height:auto;">';
-            }
-            echo '</div>';
-        }
-    }
-}
-
-if (!function_exists('thd_fecha_archivo')) {
-    function thd_fecha_archivo($valor)
-    {
-        // Si es array con ID (return_format = array)
-        if (is_array($valor) && !empty($valor['ID'])) {
-            $att = get_post((int)$valor['ID']);
-            if ($att) {
-                $ts = mysql2date('U', $att->post_date, false);
-                return date_i18n(get_option('date_format'), $ts);
-            }
-        }
-        // Si es URL (return_format = url), intentamos mapear al adjunto
-        if (is_string($valor) && $valor !== '') {
-            $att_id = attachment_url_to_postid($valor);
-            if ($att_id) {
-                return get_the_date(get_option('date_format'), $att_id);
-            }
-        }
-        return '';
-    }
-}
-
-if (!function_exists('thd_badge_estado')) {
-    function thd_badge_estado($estado)
-    {
-        $estado = strtolower((string)$estado);
-        $color  = match ($estado) {
-            'capturado'  => '#f0ad4e',
-            'autorizado' => '#5cb85c',
-            'rechazado'  => '#d9534f',
-            default      => '#999',
-        };
-        return '<span style="display:inline-block;padding:.2rem .5rem;border-radius:.5rem;background:'
-            . esc_attr($color) . '20;color:' . esc_attr($color) . ';font-weight:600">'
-            . esc_html(ucfirst($estado)) . '</span>';
-    }
-}
-
-if (!function_exists('thd_tiene_archivo')) {
-    function thd_tiene_archivo($valor)
-    {
-        if (empty($valor)) {
-            return false;
-        }
-        if (is_array($valor)) {
-            if (!empty($valor['url']) || !empty($valor['ID'])) {
-                return true;
-            }
-            if (isset($valor[0]) && is_array($valor[0]) && !empty($valor[0]['url'])) {
-                return true;
-            }
-            return false;
-        }
-        if (is_string($valor)) {
-            return trim($valor) !== '';
-        }
-        if (is_numeric($valor)) {
-            return (int)$valor > 0;
-        }
-        return !empty($valor);
-    }
-}
-
-// ————————————————————————————————————————
 // Logo (presentación institucional)
 // ————————————————————————————————————————
 $logo = $presentacion_institucional['logo_de_la_institucion'] ?? null;
 $logo_url = '';
 if (is_array($logo) && isset($logo['url'])) {
     $logo_url = $logo['sizes']['medium'] ?? $logo['url'];
-}
-
-// ————————————————————————————————————————
-// Handler de cambio de estado — SOLO subcampo por field_key
-// con fallback a meta y mapeo de choices
-// ————————————————————————————————————————
-if (!function_exists('thd_get_subfield_key')) {
-    function thd_get_subfield_key($group_name, $sub_name, $post_id)
-    {
-        $group = get_field_object($group_name, $post_id);
-        if (!$group || empty($group['sub_fields'])) {
-            return null;
-        }
-        foreach ($group['sub_fields'] as $sf) {
-            if (!empty($sf['name']) && $sf['name'] === $sub_name) {
-                return $sf['key']; // field_...
-            }
-        }
-        return null;
-    }
 }
 
 $mensaje_estado = '';
@@ -329,8 +159,10 @@ if (
             <span>El RFC registrado será su usuario de acceso</span>
         </p>
 
-        <form action="" method="post" enctype="multipart/form-data">
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" enctype="multipart/form-data">
             <?php wp_nonce_field('registrar_institucion', 'institucion_nonce'); ?>
+            <input type="hidden" name="action" value="registrar_institucion">
+            <input type="hidden" name="submit_institucion" value="1">
             <?php if (!empty($institucion_id)): ?>
             <input type="hidden" name="institucion_id" value="<?php echo esc_attr($institucion_id); ?>">
             <?php endif; ?>
@@ -401,9 +233,10 @@ if (
                 <div class="input-cont">
                     <label>Institución Subsidiaria</label>
                     <select name="institucion_subsidiaria">
+                        <?php $val = $info_contacto['institucion_subsidiaria'] ?? ''; ?>
                         <option value="">Seleccione una opción</option>
-                        <option value="si">Sí</option>
-                        <option value="no">No</option>
+                        <option value="si" <?php selected($val, 'si'); ?>>Sí</option>
+                        <option value="no" <?php selected($val, 'no'); ?>>No</option>
                     </select>
                 </div>
 
@@ -428,7 +261,7 @@ if (
 
                 <div class="input-cont">
                     <label>Sede</label>
-                    <input type="text" name="sede">
+                    <input type="text" name="sede" value="<?php echo esc_attr($info_contacto['sede'] ?? ''); ?>">
                 </div>
             </div>
 
@@ -441,7 +274,7 @@ if (
 
                 <div class="input-cont">
                     <label>Correo Contacto</label>
-                    <input type="text" name="correo_contacto"
+                    <input type="text" name="correo_contacto" <input type="email" name="correo_contacto"
                         value="<?php echo esc_attr($info_contacto['datos_del_presidente']['correo_contacto'] ?? ''); ?>">
                 </div>
 
@@ -524,9 +357,10 @@ if (
                 <div class="input-cont">
                     <label>Tienda Adicional</label>
                     <select name="tienda_adicional">
+                        <?php $val_t = $info_contacto['tienda_adicional'] ?? ''; ?>
                         <option value="">Seleccione una opción</option>
-                        <option value="Sí">Sí</option>
-                        <option value="No">No</option>
+                        <option value="Sí" <?php selected($val_t, 'Sí'); ?>>Sí</option>
+                        <option value="No" <?php selected($val_t, 'No'); ?>>No</option>
                     </select>
                 </div>
 
@@ -543,7 +377,7 @@ if (
             <div class="row">
                 <div class="input-cont half-w">
                     <label>Principal necesidad que tiene la institución</label>
-                    <textarea name="necesidad"><?php echo esc_attr($necesidades['necesidad'] ?? ''); ?></textarea>
+                    <textarea name="necesidad"><?php echo esc_textarea($necesidades['necesidad'] ?? ''); ?></textarea>
                 </div>
 
                 <div class="input-cont">
@@ -570,7 +404,7 @@ if (
                             <input type="text" class="custom-input-tag" placeholder="Escribe y presiona Enter" />
                             <div class="custom-options">
                                 <?php
-$seleccionados = array_map(fn ($item) => mb_strtolower(trim($item), 'UTF-8'), $necesidades['grupo_social'] ?? []);
+                                $seleccionados = array_map(fn ($item) => mb_strtolower(trim($item), 'UTF-8'), $necesidades['grupo_social'] ?? []);
 $grupos = values_necesidades_groups();
 foreach ($grupos as $valor):
     $valor_normalizado = mb_strtolower(trim($valor), 'UTF-8');
@@ -733,7 +567,7 @@ endforeach;
 
             <div class="row">
                 <div class="input-cont half-w">
-                    <label>Copia Recibo Dedudicble en PDF o foto</label>
+                    <label>Copia Recibo Deducible en PDF o foto</label>
                     <div class="input-file-drop" id="dropZoneDeducible">
                         <div class="text">
                             <span id="fileNameDeducible">Arrastra los archivos aquí</span>
@@ -772,8 +606,8 @@ endforeach;
                                 <img src="<?php echo get_template_directory_uri() . '/img/icon-clip.png'; ?>" alt="">
                             </span>
                         </div>
-                        <input type="file" name="institucion_excel" id="inputInstitucionExcel"
-                            accept=".pdf,.png,.jpg,.jpeg">
+                        <input type="file" name="institucion_excel" id="inputInstitucionExcel" accept=".xlsx,.xls,.csv">
+
                     </div>
                     <?php mostrar_archivo_existente('institucion_excel', 'Solicitud de alta de institución en Excel', $archivos_requeridos, $puede_ver_estados); ?>
                 </div>
@@ -810,7 +644,8 @@ endforeach;
             </div>
 
             <button type="submit" name="submit_institucion">ALTA COMPLETA</button>
-            <button class="recordatorio" name="recordatorio">ENVIAR RECORDATORIO</button>
+            <button type="button" class="recordatorio" name="recordatorio">ENVIAR RECORDATORIO</button>
+
         </form>
 
         <hr class="divider">
@@ -900,37 +735,40 @@ endforeach;
                             break;
                         }
                     }
-                    if ($estado_val === null || $estado_val === '') {
-                        $estado_val = $archivos_requeridos['estado_'.$campo] ?? $archivos_requeridos['estado_del_'.$campo] ?? null;
-                        if ($campo === 'rfc_archivo' && empty($estado_val)) {
-                            $estado_val = $archivos_requeridos['estado_del_rfc'] ?? null;
-                        }
-                    }
-                    if ($estado_val === null || $estado_val === '') {
-                        $estado_val = 'capturado';
-                    }
+                    $estado_val = thd_estado_archivo($institucion_id, $campo);
+
                     ?>
                 <tr>
                     <td><?php if ($url): ?><a href="<?php echo esc_url($url); ?>" target="_blank"
                             rel="noopener">📎</a><?php endif; ?></td>
                     <td><?php echo $fecha ? esc_html($fecha) : '—'; ?></td>
                     <td><?php echo esc_html($label); ?></td>
-                    <td><?php echo thd_badge_estado($estado_val); ?></td>
+                    <td class="td-estado"><?php echo thd_badge_estado($estado_val); ?></td>
+
 
                     <?php if (!empty($puede_admin)): ?>
                     <td>
-                        <form method="post" style="display:inline">
+                        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
+                            style="display:inline">
                             <?php wp_nonce_field('cambiar_estado_archivo_'.$institucion_id, 'estado_nonce'); ?>
-                            <input type="hidden" name="cambiar_estado_archivo" value="1">
+                            <input type="hidden" name="ajax_nonce"
+                                value="<?php echo esc_attr(wp_create_nonce('thd_estado_'.$institucion_id)); ?>">
+
+                            <input type="hidden" name="action" value="cambiar_estado_archivo">
                             <input type="hidden" name="institucion_id" value="<?php echo esc_attr($institucion_id); ?>">
                             <input type="hidden" name="archivo_key" value="<?php echo esc_attr($campo); ?>">
                             <input type="hidden" name="nuevo_estado" value="autorizado">
                             <button type="submit" class="btn-status"
                                 <?php echo $url ? '' : 'disabled'; ?>>Autorizar</button>
                         </form>
-                        <form method="post" style="display:inline;margin-left:.4rem">
+
+                        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
+                            style="display:inline;margin-left:.4rem">
                             <?php wp_nonce_field('cambiar_estado_archivo_'.$institucion_id, 'estado_nonce'); ?>
-                            <input type="hidden" name="cambiar_estado_archivo" value="1">
+                            <input type="hidden" name="ajax_nonce"
+                                value="<?php echo esc_attr(wp_create_nonce('thd_estado_'.$institucion_id)); ?>">
+
+                            <input type="hidden" name="action" value="cambiar_estado_archivo">
                             <input type="hidden" name="institucion_id" value="<?php echo esc_attr($institucion_id); ?>">
                             <input type="hidden" name="archivo_key" value="<?php echo esc_attr($campo); ?>">
                             <input type="hidden" name="nuevo_estado" value="rechazado">
@@ -948,243 +786,4 @@ endforeach;
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-
-    const estadoSelect = document.getElementById('estado-select');
-    const municipioSelect = document.getElementById('municipio-select');
-    const entidadSelect = document.getElementById('entidad-select');
-    const ciudadSelect = document.getElementById('ciudad-select');
-
-    const basePath = window.location.origin + window.location.pathname.split('/').slice(0, 2).join('/');
-    const jsonMunicipios = basePath + '/wp-content/themes/donaciones/js/municipios-estado.json';
-    const jsonEstados = basePath + '/wp-content/themes/donaciones/js/estados.json';
-
-    const estadoMap = {}; // slug => nombre real
-
-    const valoresMunicipios = {
-        ig_municipio: '<?php echo esc_js($IG_municipio); ?>',
-        ig_estado: '<?php echo esc_js($IG_estado); ?>',
-        ic_ciudad: '<?php echo esc_js($IC_ciudad); ?>',
-        ic_entidad: '<?php echo esc_js($IC_entidad); ?>'
-    };
-
-    // Cargar estados y construir el mapa
-    fetch(jsonEstados)
-        .then(r => r.json())
-        .then(estados => {
-            estados.forEach(nombre => {
-                estadoMap[nombre] = nombre;
-                if (nombre == valoresMunicipios.ic_entidad) {
-                    llenarMunicipios(nombre, ciudadSelect, valoresMunicipios.ic_ciudad);
-                } else if (nombre == valoresMunicipios.ig_estado) {
-                    llenarMunicipios(nombre, municipioSelect, valoresMunicipios.ig_municipio);
-                }
-            });
-        })
-        .catch(err => {
-            console.error('Error al cargar estados:', err);
-        });
-
-    // Función para llenar municipios
-    function llenarMunicipios(estadoSlug, municipioSelectEl, municipioActual) {
-        const estadoNombre = estadoMap[estadoSlug];
-        if (!estadoNombre) {
-            municipioSelectEl.innerHTML = '<option value="">Seleccione un municipio</option>';
-            return;
-        }
-
-        fetch(jsonMunicipios)
-            .then(r => r.json())
-            .then(data => {
-                const municipios = data[estadoNombre] || [];
-                municipioSelectEl.innerHTML = '<option value="">Seleccione un municipio</option>';
-                let municipioExiste = false;
-                municipios.forEach(m => {
-                    const opt = document.createElement('option');
-                    opt.value = m;
-                    opt.textContent = m;
-                    if (m === municipioActual) {
-                        opt.selected = true;
-                        municipioExiste = true;
-                    }
-                    municipioSelectEl.appendChild(opt);
-                });
-
-                if (municipioActual && !municipioExiste) {
-                    const opt = document.createElement('option');
-                    opt.value = municipioActual;
-                    opt.textContent = municipioActual;
-                    opt.selected = true;
-                    municipioSelectEl.appendChild(opt);
-                }
-            })
-            .catch(err => {
-                console.error('Error al cargar municipios:', err);
-                municipioSelectEl.innerHTML = '<option value="">Error al cargar</option>';
-            });
-    }
-
-    if (estadoSelect) {
-        estadoSelect.addEventListener('change', function() {
-            llenarMunicipios(this.value, municipioSelect, '');
-        });
-    }
-    if (entidadSelect) {
-        entidadSelect.addEventListener('change', function() {
-            llenarMunicipios(this.value, ciudadSelect, '');
-        });
-    }
-
-    // Manejo de archivos: escribe nombres en labels
-    function handleFileChange(inputId, fileLabelId) {
-        const input = document.getElementById(inputId);
-        const label = document.getElementById(fileLabelId);
-
-        if (input && label) {
-            input.addEventListener('change', function(e) {
-                const files = Array.from(e.target.files);
-                if (files.length > 0) {
-                    const max = 6;
-                    const names = files.slice(0, max).map(f => f.name);
-                    label.textContent = names.join(', ') + (files.length > max ?
-                        ' (solo se mostrarán 6)' : '');
-                    label.style.fontWeight = 'bold';
-                    label.style.color = '#333';
-                } else {
-                    label.textContent = 'Arrastra los archivos aquí';
-                    label.style.fontWeight = 'normal';
-                    label.style.color = '#666';
-                }
-            });
-        }
-    }
-    // Asignaciones
-    handleFileChange('inputCarta', 'fileNameCarta');
-    handleFileChange('inputFotos', 'fileNameFotos');
-    handleFileChange('inputActaConstitutiva', 'fileNameActaConstitutiva');
-    handleFileChange('inputCompDomicilio', 'fileNameCompDomicilio');
-    handleFileChange('inputDeducible', 'fileNameDeducible');
-    handleFileChange('inputApoderadoLegal', 'fileNameApoderadoLegal');
-    handleFileChange('inputInstitucionExcel', 'fileNameInstitucionExcel');
-    handleFileChange('inputCertificadoDonaciones', 'fileNameCertificadoDonaciones');
-    handleFileChange('inputRFC', 'fileNameRFC');
-
-    // Preview de logo
-    const logoInput = document.getElementById('logoInput');
-    const logoPreview = document.getElementById('logoPreview');
-    if (logoInput && logoPreview) {
-        logoInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    logoPreview.src = evt.target.result;
-                    logoPreview.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-    }
-
-    // Custom select chips
-    document.querySelectorAll('.custom-select').forEach(select => {
-        const placeholder = select.querySelector('.selected-placeholder');
-        const options = select.querySelectorAll('.custom-options .option');
-
-        options.forEach(option => {
-            option.addEventListener('click', () => {
-                if (option.classList.contains('disabled')) return;
-                const value = option.dataset.value;
-
-                const newTag = document.createElement('span');
-                newTag.className = 'tag';
-                newTag.dataset.value = value;
-                newTag.innerHTML = `${value}<span class="remove-tag">×</span>`;
-                placeholder.appendChild(newTag);
-
-                option.classList.add('disabled');
-                updateHiddenInput();
-            });
-        });
-
-        placeholder.addEventListener('click', e => {
-            if (e.target.classList.contains('remove-tag')) {
-                const tag = e.target.closest('.tag');
-                const value = tag.dataset.value;
-                tag.remove();
-
-                const matchingOption = select.querySelector(
-                    `.custom-options .option[data-value="${CSS.escape(value)}"]`);
-                if (matchingOption) matchingOption.classList.remove('disabled');
-
-                updateHiddenInput();
-            }
-        });
-
-        function updateHiddenInput() {
-            const wrapper = select.closest('.custom-select-wrapper');
-            wrapper.querySelectorAll(`input[name="${select.dataset.name}[]"]`).forEach(el => el
-                .remove());
-            const tags = placeholder.querySelectorAll('.tag');
-            tags.forEach(tag => {
-                const value = tag.dataset.value;
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = select.dataset.name + '[]';
-                input.value = value;
-                wrapper.appendChild(input);
-            });
-        }
-
-        const inputTag = select.querySelector('.custom-input-tag');
-        inputTag.addEventListener('input', function() {
-            const query = inputTag.value.trim().toLowerCase();
-            let tieneCoincidencias = false;
-            options.forEach(opt => {
-                const text = opt.textContent.toLowerCase();
-                const visible = text.includes(query) && !opt.classList.contains(
-                    'disabled');
-                opt.style.display = visible ? 'block' : 'none';
-                if (visible) tieneCoincidencias = true;
-            });
-            const optionsBox = select.querySelector('.custom-options');
-            optionsBox.style.display = tieneCoincidencias ? 'block' : 'none';
-        });
-
-        inputTag.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const rawValue = inputTag.value.trim();
-                if (!rawValue) return;
-
-                const existe = Array.from(placeholder.querySelectorAll('.tag'))
-                    .some(tag => tag.dataset.value.toLowerCase() === rawValue.toLowerCase());
-                if (existe) {
-                    inputTag.value = '';
-                    return;
-                }
-
-                const tag = document.createElement('span');
-                tag.className = 'tag';
-                tag.dataset.value = rawValue;
-                tag.innerHTML = `${rawValue}<span class="remove-tag">×</span>`;
-                placeholder.appendChild(tag);
-
-                inputTag.value = '';
-                updateHiddenInput();
-                options.forEach(opt => opt.style.display = 'none');
-            }
-        });
-
-        inputTag.addEventListener('focus', function() {
-            options.forEach(opt => {
-                opt.style.display = opt.classList.contains('disabled') ? 'none' :
-                    'block';
-            });
-            select.querySelector('.custom-options').style.display = 'block';
-        });
-    });
-});
-</script>
 <?php get_footer('admin'); ?>
