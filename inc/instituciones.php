@@ -240,12 +240,17 @@ if (!function_exists('mostrar_archivo_existente')) {
             }
 
             $estado = mb_strtolower((string)$estado_val, 'UTF-8');
-            $color = match ($estado) {
-                'capturado'  => '#f0ad4e',
-                'autorizado' => '#5cb85c',
-                'rechazado'  => '#d9534f',
-                default      => '#999'
-            };
+
+            if ($estado === 'capturado') {
+                $color = '#f0ad4e';
+            } elseif ($estado === 'autorizado') {
+                $color = '#5cb85c';
+            } elseif ($estado === 'rechazado') {
+                $color = '#d9534f';
+            } else {
+                $color = '#999';
+            }
+
             echo '<p style="padding: 0 20px;"><strong>Estado:</strong> <span style="color:' . esc_attr($color) . '; font-weight:bold;">' . esc_html(ucfirst($estado)) . '</span></p>';
         }
     }

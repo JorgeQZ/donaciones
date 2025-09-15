@@ -2,6 +2,9 @@
 require_once get_template_directory() . '/inc/instituciones.php';
 require_once get_template_directory() . '/inc/inicio.php';
 require_once get_template_directory() . '/inc/recordatorio.php';
+// functions.php
+require_once get_stylesheet_directory() . '/inc/thd-login-rfc.php';
+// Si usas parent+child, get_stylesheet_directory() ya apunta al child.
 
 
 function donaciones_theme_setup()
@@ -369,3 +372,6 @@ add_action('admin_init', function () {
     wp_safe_redirect(home_url('/'));
     exit;
 });
+
+
+// 2au?f58mxCBt
