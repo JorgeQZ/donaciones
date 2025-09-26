@@ -1,19 +1,29 @@
 <?php
-$ajax_url   = admin_url('admin-ajax.php');
-$rem_nonce  = wp_create_nonce('thd_send_reminder');
+$ajax_url  = admin_url('admin-ajax.php');
+$rem_nonce = wp_create_nonce('thd_send_reminder');
+
+$current  = wp_get_current_user();
+$is_subscriber   = is_user_logged_in() && in_array('subscriber', (array) $current->roles, true);
 
 $args = [
   'post_type'      => 'institucion',
   'posts_per_page' => -1,
   'post_status'    => 'publish',
+  'orderby'        => 'date',
+  'order'          => 'DESC',
 ];
+
+// Si es subscriber, solo sus posts (propiedad por autor)
+if ($is_subscriber) {
+    $args['author'] = get_current_user_id();
+}
+
 $q = new WP_Query($args);
 
 if ($q->have_posts()) : ?>
 <table>
     <thead>
         <tr>
-            <th></th>
             <th>NOMBRE</th>
             <th>RFC</th>
             <th>SEDE</th>
@@ -23,65 +33,64 @@ if ($q->have_posts()) : ?>
             <th>CONTACTO</th>
             <th>TELÉFONO</th>
             <th>COMPLETO</th>
+            <?php if (!$is_subscriber): ?>
             <th>ACCIONES</th>
+            <?php endif; ?>
         </tr>
     </thead>
     <tbody>
         <?php
-    while ($q->have_posts()) :
-        $q->the_post();
-        $post_id       = get_the_ID();
-        $info_general  = (array) get_field('informacion_general', $post_id);
-        $info_contacto = (array) get_field('informacion_de_contacto', $post_id);
-        $single_url    = get_permalink($post_id);
+        while ($q->have_posts()) :
+            $q->the_post();
+            $post_id       = get_the_ID();
+            $info_general  = (array) get_field('informacion_general', $post_id);
+            $info_contacto = (array) get_field('informacion_de_contacto', $post_id);
+            $single_url    = get_permalink($post_id);
 
-        // faltantes (si no existe helper, define un mínimo)
-        if (!function_exists('thd_institucion_missing_fields')) {
-            function thd_institucion_missing_fields($pid)
-            {
-                $ig = (array) get_field('informacion_general', $pid);
-                $ic = (array) get_field('informacion_de_contacto', $pid);
-                $ne = (array) get_field('necesidades', $pid);
-                $faltan = [];
-                if (empty($ig['rfc'])) {
-                    $faltan[] = 'RFC';
+            if (!function_exists('thd_institucion_missing_fields')) {
+                function thd_institucion_missing_fields($pid)
+                {
+                    $ig = (array) get_field('informacion_general', $pid);
+                    $ic = (array) get_field('informacion_de_contacto', $pid);
+                    $ne = (array) get_field('necesidades', $pid);
+                    $faltan = [];
+                    if (empty($ig['rfc'])) {
+                        $faltan[] = 'RFC';
+                    }
+                    if (empty($ig['nombre_fiscal'])) {
+                        $faltan[] = 'Nombre fiscal';
+                    }
+                    if (empty($ig['domicilio_fiscal'])) {
+                        $faltan[] = 'Domicilio fiscal';
+                    }
+                    if (empty($ig['estado'])) {
+                        $faltan[] = 'Estado';
+                    }
+                    if (empty($ig['municipio'])) {
+                        $faltan[] = 'Municipio';
+                    }
+                    $correo = $ic['datos_del_presidente']['correo_contacto'] ?? '';
+                    if (!is_email($correo)) {
+                        $faltan[] = 'Correo de contacto';
+                    }
+                    if (empty($ne['numero_anual'])) {
+                        $faltan[] = 'No. anual personas beneficiadas';
+                    }
+                    if (empty($ne['grupo_social'])) {
+                        $faltan[] = 'Grupo social';
+                    }
+                    if (empty($ne['sector_apoyo'])) {
+                        $faltan[] = 'Sector de apoyo';
+                    }
+                    return $faltan;
                 }
-                if (empty($ig['nombre_fiscal'])) {
-                    $faltan[] = 'Nombre fiscal';
-                }
-                if (empty($ig['domicilio_fiscal'])) {
-                    $faltan[] = 'Domicilio fiscal';
-                }
-                if (empty($ig['estado'])) {
-                    $faltan[] = 'Estado';
-                }
-                if (empty($ig['municipio'])) {
-                    $faltan[] = 'Municipio';
-                }
-                $correo = $ic['datos_del_presidente']['correo_contacto'] ?? '';
-                if (!is_email($correo)) {
-                    $faltan[] = 'Correo de contacto';
-                }
-                if (empty($ne['numero_anual'])) {
-                    $faltan[] = 'No. anual personas beneficiadas';
-                }
-                if (empty($ne['grupo_social'])) {
-                    $faltan[] = 'Grupo social';
-                }
-                if (empty($ne['sector_apoyo'])) {
-                    $faltan[] = 'Sector de apoyo';
-                }
-                return $faltan;
             }
-        }
-        $missing      = thd_institucion_missing_fields($post_id);
-        $miss_count   = is_array($missing) ? count($missing) : 0;
-        $complete_txt = $miss_count ? $miss_count.' faltante(s)' : 'Sí';
-        ?>
+            $missing      = thd_institucion_missing_fields($post_id);
+            $miss_count   = is_array($missing) ? count($missing) : 0;
+            $complete_txt = $miss_count ? $miss_count.' faltante(s)' : 'Sí';
+            ?>
         <tr data-url="<?php echo esc_url($single_url); ?>" data-id="<?php echo esc_attr($post_id); ?>">
-            <td>
-                <input type="checkbox" name="instituciones[]" value="<?php echo esc_attr($post_id); ?>">
-            </td>
+
             <td><?php the_title(); ?></td>
             <td><?php echo esc_html($info_general['rfc'] ?? '-'); ?></td>
             <td><?php echo esc_html($info_contacto['sede'] ?? '-'); ?></td>
@@ -91,12 +100,16 @@ if ($q->have_posts()) : ?>
             <td><?php echo esc_html($info_contacto['datos_del_presidente']['correo_contacto'] ?? '-'); ?></td>
             <td><?php echo esc_html($info_contacto['datos_del_presidente']['telefono'] ?? '-'); ?></td>
             <td>
-                <span
-                    style="padding:2px 6px;border-radius:12px;
-            <?php echo $miss_count ? 'background:#fff5f5;border:1px solid #dc3232;color:#dc3232;' : 'background:#f6ffed;border:1px solid #46b450;color:#155724;'; ?>">
+                <span style="padding:2px 6px;border-radius:12px;<?php
+                        echo $miss_count
+                            ? 'background:#fff5f5;border:1px solid #dc3232;color:#dc3232;'
+                            : 'background:#f6ffed;border:1px solid #46b450;color:#155724;';
+            ?>">
                     <?php echo esc_html($complete_txt); ?>
                 </span>
             </td>
+
+            <?php if (!$is_subscriber): ?>
             <td>
                 <button type="button" class="btn-reminder" data-ajax="<?php echo esc_url($ajax_url); ?>"
                     data-nonce="<?php echo esc_attr($rem_nonce); ?>" data-post="<?php echo esc_attr($post_id); ?>"
@@ -104,14 +117,15 @@ if ($q->have_posts()) : ?>
                     Recordatorio
                 </button>
             </td>
+            <?php endif; ?>
         </tr>
-        <?php
-    endwhile; ?>
+        <?php endwhile; ?>
     </tbody>
 </table>
 
+<?php if (!$is_subscriber): ?>
 <script>
-// Delegación de eventos para el botón "Recordatorio" (funciona tras recargas AJAX)
+// Delegación de eventos para el botón "Recordatorio" (admins/editores)
 (function() {
     document.addEventListener('click', function(e) {
         const btn = e.target.closest('.btn-reminder');
@@ -156,6 +170,7 @@ if ($q->have_posts()) : ?>
     }, true);
 })();
 </script>
+<?php endif; ?>
 
 <?php else : ?>
 <p>No hay instituciones registradas.</p>

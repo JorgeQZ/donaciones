@@ -110,6 +110,7 @@ if (!function_exists('thd_register_fail')) {
         return min($left_ip, $left_usr);
     }
 }
+
 if (!function_exists('thd_clear_attempts')) {
     function thd_clear_attempts($login)
     {
@@ -182,10 +183,19 @@ if (!function_exists('thd_subscriber_login_ajax')) {
         }
 
         thd_clear_attempts($rfc);
-        $safe_redirect = wp_validate_redirect($redirect_to, home_url('/'));
+
+        // Construir URL fija: /consulta-de-instituciones/?mine=1
+        $consulta_page = get_page_by_path('consulta-de-instituciones');
+        $consulta_url  = $consulta_page ? get_permalink($consulta_page) : home_url('/consulta-de-instituciones/');
+
+        // Si quieres que TODOS los que usan este login vayan ahí:
+        $destino = $consulta_url;
+
+        $safe_redirect = wp_validate_redirect($destino, $consulta_url);
         wp_send_json_success(array('message' => '¡Bienvenido!', 'redirect' => $safe_redirect));
     }
 }
+
 /** ========== AJAX: Recuperación ========== */
 add_action('wp_ajax_nopriv_thd_subscriber_lostpass', 'thd_subscriber_lostpass_ajax');
 add_action('wp_ajax_thd_subscriber_lostpass', 'thd_subscriber_lostpass_ajax');
@@ -218,6 +228,7 @@ if (!function_exists('thd_subscriber_lostpass_ajax')) {
         ));
     }
 }
+
 /** ========== Shortcode ========== */
 if (!function_exists('shortcode_html')) {
     function shortcode_html($atts = array())
@@ -225,10 +236,28 @@ if (!function_exists('shortcode_html')) {
         $atts = shortcode_atts(array('redirect' => ''), $atts, 'inicio_shortcode');
 
         $redirect_to = $atts['redirect'] ? esc_url(home_url($atts['redirect'])) : esc_url(add_query_arg(array()));
-        $nonce = wp_create_nonce('thd_login_nonce');
-        $ajax  = admin_url('admin-ajax.php');
+        $nonce       = wp_create_nonce('thd_login_nonce');
+        $ajax        = admin_url('admin-ajax.php');
 
-        ob_start(); ?>
+        // URL del archivo/consulta de instituciones con filtro "mías"
+        $consulta_url = get_post_type_archive_link('institucion');
+        if (!$consulta_url) {
+            $consulta_url = home_url('/consulta-de-instituciones'); // fallback si no hay archive
+        }
+
+        ob_start();
+
+        // === Si ya está logueado: muestra botón de acceso a "mis instituciones"
+        if (is_user_logged_in()) : ?>
+<div class="inicio-shortcode" data-thd-login>
+    <div class="thd-logged-box">
+        <p style="margin-bottom:.75rem;">Ya iniciaste sesión.</p>
+        <a class="thd-btn" href="<?php echo $consulta_url; ?>">Ver mis instituciones</a>
+    </div>
+</div>
+<?php
+            // === Si NO está logueado: muestra el formulario original
+        else : ?>
 <div class="inicio-shortcode" data-thd-login>
     <form class="thd-login-form" method="post" action="<?php echo esc_url($ajax); ?>" novalidate>
         <input type="hidden" name="action" value="thd_subscriber_login">
@@ -244,9 +273,17 @@ if (!function_exists('shortcode_html')) {
 
         <div class="inputs dos">
             <label class="input-2" for="thd-pass">Contraseña</label>
-            <input id="thd-pass" name="password" type="password" autocomplete="current-password" required>
-            <div class="thd-inline thd-showpass">
-                <label><input type="checkbox" id="thd-showpass"> Mostrar contraseña</label>
+
+            <div class="thd-passwrap">
+                <input id="thd-pass" name="password" type="password" autocomplete="current-password" required>
+                <button type="button" class="thd-eye" aria-label="Mostrar contraseña" aria-controls="thd-pass"
+                    aria-pressed="false">
+                    <!-- Icono inicial: ojo -->
+                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                        <path
+                            d="M12 5c-5 0-9 4.5-10 7 1 2.5 5 7 10 7s9-4.5 10-7c-1-2.5-5-7-10-7zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" />
+                    </svg>
+                </button>
             </div>
         </div>
 
@@ -279,7 +316,10 @@ if (!function_exists('shortcode_html')) {
         <div class="thd-msg-lost" aria-live="polite" style="margin-top:10px;"></div>
     </form>
 </div>
+<?php endif;
 
+        // ====== Scripts y estilos (no cambian, conservan lo tuyo; ojo con el bloque de "eye")
+        ?>
 <script>
 (function() {
     const wrap = document.currentScript.previousElementSibling?.closest('[data-thd-login]') || document
@@ -291,27 +331,45 @@ if (!function_exists('shortcode_html')) {
     const lostForm = wrap.querySelector('.thd-lostpass-form');
     const msg = wrap.querySelector('.thd-msg');
     const msgLost = wrap.querySelector('.thd-msg-lost');
-    const showPass = wrap.querySelector('#thd-showpass');
     const passInput = wrap.querySelector('#thd-pass');
+    const eyeBtn = wrap.querySelector('.thd-eye');
 
-    if (showPass && passInput) {
-        showPass.addEventListener('change', () => {
-            passInput.type = showPass.checked ? 'text' : 'password';
+    // Toggle ojo (si existe el form)
+    if (eyeBtn && passInput) {
+        const svgEye =
+            `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 5c-5 0-9 4.5-10 7 1 2.5 5 7 10 7s9-4.5 10-7c-1-2.5-5-7-10-7zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg>`;
+        const svgEyeOff =
+            `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M2 3.3 3.3 2 22 20.7 20.7 22l-3.2-3.2C15.6 19.5 13.9 20 12 20 7 20 3 15.5 2 13c.5-1.2 1.7-2.9 3.3-4.4L2 3.3zm7.8 7.8a2.5 2.5 0 0 0 3.1 3.1l-3.1-3.1zM12 5c5 0 9 4.5 10 7-.3.7-1 1.8-2 2.9l-1.4-1.4C19.5 12.5 16.3 9 12 9c-.7 0-1.4.1-2 .3L8.4 7.7C9.5 5.9 10.7 5 12 5z"/></svg>`;
+
+        function setPasswordVisibility(show) {
+            passInput.type = show ? 'text' : 'password';
+            eyeBtn.setAttribute('aria-pressed', show ? 'true' : 'false');
+            eyeBtn.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
+            eyeBtn.innerHTML = show ? svgEyeOff : svgEye;
+        }
+        setPasswordVisibility(false);
+        eyeBtn.addEventListener('click', () => {
+            setPasswordVisibility(passInput.type === 'password');
         });
     }
 
-    wrap.querySelector('#thd-forgot-link')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        loginForm.style.display = 'none';
-        lostForm.style.display = 'block';
-        msg.textContent = '';
-    });
-    wrap.querySelector('#thd-cancel-lost')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        lostForm.style.display = 'none';
-        loginForm.style.display = 'block';
-        msgLost.textContent = '';
-    });
+    // Manejo de formularios (si existen)
+    if (loginForm) {
+        wrap.querySelector('#thd-forgot-link')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginForm.style.display = 'none';
+            lostForm.style.display = 'block';
+            msg.textContent = '';
+        });
+    }
+    if (lostForm) {
+        wrap.querySelector('#thd-cancel-lost')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            lostForm.style.display = 'none';
+            loginForm.style.display = 'block';
+            msgLost.textContent = '';
+        });
+    }
 
     async function postForm(formEl) {
         const data = new FormData(formEl);
@@ -324,73 +382,49 @@ if (!function_exists('shortcode_html')) {
         return json;
     }
 
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        msg.textContent = 'Validando…';
-        try {
-            const json = await postForm(loginForm);
-            if (json && json.success) {
-                msg.textContent = 'Accediendo…';
-                const url = (json.data && json.data.redirect) ? json.data.redirect : window.location
-                    .href;
-                window.location.href = url;
-            } else {
-                msg.textContent = (json && json.data && json.data.message) ? json.data.message :
-                    'Error al iniciar sesión.';
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const msg = wrap.querySelector('.thd-msg');
+            msg.textContent = 'Validando…';
+            try {
+                const json = await postForm(loginForm);
+                if (json && json.success) {
+                    msg.textContent = 'Accediendo…';
+                    const url = (json.data && json.data.redirect) ? json.data.redirect : window.location
+                        .href;
+                    window.location.href = url;
+                } else {
+                    msg.textContent = (json && json.data && json.data.message) ? json.data.message :
+                        'Error al iniciar sesión.';
+                }
+            } catch (err) {
+                msg.textContent = 'Error de red. Intenta de nuevo.';
             }
-        } catch (err) {
-            msg.textContent = 'Error de red. Intenta de nuevo.';
-        }
-    });
+        });
+    }
 
-    lostForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        msgLost.textContent = 'Procesando…';
-        try {
-            const json = await postForm(lostForm);
-            if (json && json.success) {
-                msgLost.textContent = (json.data && json.data.message) ? json.data.message :
-                    'Si tu RFC existe, te llegará un correo.';
-            } else {
-                msgLost.textContent = 'No pudimos procesar tu solicitud. Inténtalo más tarde.';
+    if (lostForm) {
+        lostForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const msgLost = wrap.querySelector('.thd-msg-lost');
+            msgLost.textContent = 'Procesando…';
+            try {
+                const json = await postForm(lostForm);
+                if (json && json.success) {
+                    msgLost.textContent = (json.data && json.data.message) ? json.data.message :
+                        'Si tu RFC existe, te llegará un correo.';
+                } else {
+                    msgLost.textContent = 'No pudimos procesar tu solicitud. Inténtalo más tarde.';
+                }
+            } catch (err) {
+                msgLost.textContent = 'Error de red. Intenta de nuevo.';
             }
-        } catch (err) {
-            msgLost.textContent = 'Error de red. Intenta de nuevo.';
-        }
-    });
+        });
+    }
 })();
 </script>
 
-<style>
-.inicio-shortcode .inputs {
-    margin-bottom: .75rem;
-}
-
-.inicio-shortcode input[type="text"],
-.inicio-shortcode input[type="password"] {
-    width: 100%;
-    padding: .6rem .8rem;
-    border: 1px solid #ccc;
-    border-radius: .5rem;
-}
-
-.inicio-shortcode .thd-btn {
-    display: inline-block;
-    padding: .6rem 1rem;
-    border-radius: .5rem;
-    border: 0;
-    cursor: pointer;
-    background: #ef6c00;
-    color: #fff;
-    font-weight: 600;
-}
-
-.inicio-shortcode .thd-msg,
-.inicio-shortcode .thd-msg-lost {
-    color: #d32f2f;
-    font-weight: 600;
-}
-</style>
 <?php
         return ob_get_clean();
     }

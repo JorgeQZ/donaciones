@@ -1,6 +1,13 @@
 <?php
 get_header('admin');
 
+// ———— Acceso por rol/propiedad ————
+if (! is_user_logged_in()) {
+    wp_die('Debes iniciar sesión para acceder.');
+    exit;
+}
+
+
 if (function_exists('thd_render_notice_from_query')) {
     echo thd_render_notice_from_query();
 }
@@ -8,6 +15,10 @@ if (function_exists('thd_render_notice_from_query')) {
 $post_id = get_the_ID();
 $nonce   = wp_create_nonce('thd_send_reminder');
 $ajax    = admin_url('admin-ajax.php');
+
+$user = wp_get_current_user();
+$is_subscriber = in_array('subscriber', (array) $user->roles, true);
+
 // ————————————————————————————————————————
 // Validación de post actual
 // ————————————————————————————————————————
@@ -21,6 +32,13 @@ if ($institucion_id) {
     }
 }
 
+// Si es subscriber: solo su propia institución (autor del post)
+if ($is_subscriber) {
+    if (! $institucion || (int) $institucion->post_author !== (int) $user->ID) {
+        wp_die('No tienes permiso para ver o editar esta institución.');
+        exit;
+    }
+}
 // ————————————————————————————————————————
 // Catálogo de estados
 // ————————————————————————————————————————
@@ -288,8 +306,7 @@ if (is_array($creds) && !empty($creds['rfc']) && !empty($creds['password'])) {
 
                 <div class="input-cont">
                     <label>Correo Contacto</label>
-                    <input type="text" name="correo_contacto" <input type="email" name="correo_contacto"
-                        value="<?php echo esc_attr($info_contacto['datos_del_presidente']['correo_contacto'] ?? ''); ?>">
+                   <input type="email" name="correo_contacto" value="<?php echo esc_attr($info_contacto['datos_del_presidente']['correo_contacto'] ?? ''); ?>">
                 </div>
 
                 <div class="input-cont">
@@ -408,13 +425,12 @@ if (is_array($creds) && !empty($creds['rfc']) && !empty($creds['password'])) {
                         <div class="custom-select" data-name="grupo_social">
                             <div class="selected-placeholder">
                                 <?php
-                        if (!empty($necesidades['grupo_social'])):
-                            foreach ($necesidades['grupo_social'] as $grupo):
-                                echo '<span class="tag" data-value="' . esc_attr($grupo) . '">' . esc_html(ucfirst($grupo)) . '<span class="remove-tag">×</span></span>';
-                            endforeach;
-                        endif;
-?>
-                            </div>
+                if (!empty($necesidades['grupo_social'])):
+                    foreach ($necesidades['grupo_social'] as $grupo):
+                        echo '<span class="tag" data-value="' . esc_attr($grupo) . '">' . esc_html(ucfirst($grupo)) . '<span class="remove-tag">×</span></span>';
+                    endforeach;
+                endif;?>
+                </div>
                             <input type="text" class="custom-input-tag" placeholder="Escribe y presiona Enter" />
                             <div class="custom-options">
                                 <?php
@@ -658,11 +674,15 @@ endforeach;
             </div>
 
             <button type="submit" name="submit_institucion">ALTA COMPLETA</button>
-            <button type="button" class="recordatorio" data-post="<?php echo esc_attr($post_id); ?>"
-                data-nonce="<?php echo esc_attr($nonce); ?>" data-ajax="<?php echo esc_url($ajax); ?>">
-                ENVIAR RECORDATORIO
-            </button>
 
+            <?php if (current_user_can('manage_options')) : ?>
+                <button type="button" class="recordatorio"
+                        data-post="<?php echo esc_attr($post_id); ?>"
+                        data-nonce="<?php echo esc_attr($nonce); ?>"
+                        data-ajax="<?php echo esc_url($ajax); ?>">
+                    ENVIAR RECORDATORIO
+                </button>
+            <?php endif; ?>
         </form>
         <div id="thd-reminder-msg" style="margin-top:10px;"></div>
 
@@ -821,7 +841,6 @@ endforeach;
         </table>
         <?php endif; // hay_archivos?>
         <?php endif; // puede_ver_estados?>
-
     </div>
 </div>
 

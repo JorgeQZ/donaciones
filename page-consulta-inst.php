@@ -2,11 +2,39 @@
 /**
  * Template Name: Consulta Inst
  */
-if (! current_user_can('manage_options')) {
-    wp_die('Acceso solo para administradores');
+// Permitir a administradores ver todo; a suscriptores, ver solo sus instituciones
+if (! is_user_logged_in()) {
+    wp_die('Debes iniciar sesión para acceder.');
     exit;
 }
+$__THD_CAN_SEE_ALL = current_user_can('manage_options') || current_user_can('edit_others_posts'); // admin/editors
+$__THD_ONLY_MINE   = ! $__THD_CAN_SEE_ALL; // suscriptores y roles sin privilegios verán solo las suyas
+
 get_header('admin');
+
+// --- Filtro para que, si es suscriptor u otro rol sin privilegios, solo se consulten sus propias instituciones ---
+if (isset($__THD_ONLY_MINE) && $__THD_ONLY_MINE) {
+    add_action('pre_get_posts', function ($q) {
+        if (is_admin()) {
+            return;
+        }
+        // Aplica a cualquier WP_Query para CPT 'institucion' lanzado desde esta plantilla
+        $pt = $q->get('post_type');
+        if (empty($pt)) {
+            return;
+        }
+        // Normaliza post_type a string
+        $pt_val = is_array($pt) ? (count($pt) === 1 ? reset($pt) : null) : $pt;
+        if ($pt_val !== 'institucion') {
+            return;
+        }
+        // Limita por autor actual
+        $q->set('author', get_current_user_id());
+        // (Opcional) Si en tu sistema usas un meta, cambia por meta_query:
+        // $q->set('meta_query', array(array('key'=>'registrada_por','value'=>get_current_user_id(),'compare'=>'=')));
+    }, 9); // antes de la mayoría de ajustes
+}
+
 
 // URL del alta (ajústala si tu página tiene otra ruta o ID)
 $alta_url = site_url('/instituciones/');
@@ -14,6 +42,8 @@ $alta_url = site_url('/instituciones/');
 // Nonce para recargar tabla
 $recarga_nonce = wp_create_nonce('recargar_tabla_instituciones');
 $ajax_url      = admin_url('admin-ajax.php');
+
+
 ?>
 
 <div class="container">

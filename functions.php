@@ -180,15 +180,28 @@ add_action('wp_enqueue_scripts', 'cargar_js_header');
 /**
  * Recargar tabla de instituciones mediante AJAX
  */
-// Recarga de tabla (renderiza templates/tabla-instituciones.php)
 add_action('wp_ajax_recargar_tabla_instituciones', function () {
+    // Nonce
     check_ajax_referer('recargar_tabla_instituciones');
-    // Seguridad extra: solo admins
-    if (! current_user_can('manage_options')) {
-        wp_send_json_error('Sin permisos', 403);
+
+    // Debe estar logueado (admin, editor o subscriber)
+    if (! is_user_logged_in()) {
+        status_header(401);
+        wp_die('No autenticado');
     }
-    // Output del partial
+
+    // Headers recomendados para HTML + evitar caché
+    status_header(200);
+    send_nosniff_header();
+    nocache_headers();
+    header('Content-Type: text/html; charset=' . get_option('blog_charset'));
+
+    // Render del partial. IMPORTANTE:
+    // El partial `templates/tabla-instituciones.php` ya debe filtrar por rol:
+    // - Admin/editores: ven todo
+    // - Subscribers: solo sus instituciones (por author o meta_query)
     get_template_part('templates/tabla-instituciones');
+
     wp_die();
 });
 
@@ -375,3 +388,17 @@ add_action('admin_init', function () {
 
 
 // 2au?f58mxCBt
+
+add_action('pre_get_posts', function ($q) {
+    if (is_admin() || !$q->is_main_query()) {
+        return;
+    }
+
+    // Archivo del CPT "institucion" o página que use query principal para ese CPT
+    if ($q->is_post_type_archive('institucion') || (isset($q->query_vars['post_type']) && $q->get('post_type') === 'institucion')) {
+        if (is_user_logged_in() && isset($_GET['mine']) && $_GET['mine'] === '1') {
+            $q->set('author', get_current_user_id()); // Solo las publicadas por el usuario actual
+            $q->set('posts_per_page', 20);            // opcional
+        }
+    }
+});

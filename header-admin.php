@@ -11,6 +11,9 @@
     <?php wp_body_open(); ?>
     <header>
         <div class="desktop">
-            <img src="<?php echo get_template_directory_uri(); ?>/imgs/logo.png" alt="Logo" class="logo">
+            <a href="<?php echo esc_url(home_url('/')); ?>">
+                <img src="<?php echo esc_url(get_template_directory_uri()); ?>/imgs/logo.png" alt="Logo" class="logo">
+            </a>
+
         </div>
     </header>
