@@ -397,7 +397,7 @@ if (is_array($creds) && !empty($creds['rfc']) && !empty($creds['password'])) {
 
                 <div class="input-cont half-w">
                     <label>Dirección de la Tienda Adicional</label>
-                    <input type="text" name="direccion_tienda_adicional">
+                    <input type="text" name="direccion_tienda_adicional" value="<?php echo esc_attr($info_contacto['direccion_tienda_adicional'] ?? ''); ?>">
                 </div>
             </div>
 
@@ -425,23 +425,24 @@ if (is_array($creds) && !empty($creds['rfc']) && !empty($creds['password'])) {
                         <div class="custom-select" data-name="grupo_social">
                             <div class="selected-placeholder">
                                 <?php
-                if (!empty($necesidades['grupo_social'])):
-                    foreach ($necesidades['grupo_social'] as $grupo):
-                        echo '<span class="tag" data-value="' . esc_attr($grupo) . '">' . esc_html(ucfirst($grupo)) . '<span class="remove-tag">×</span></span>';
-                    endforeach;
-                endif;?>
-                </div>
+                                if (!empty($necesidades['grupo_social'])):
+                                    foreach ($necesidades['grupo_social'] as $grupo):
+                                        echo '<span class="tag" data-value="' . esc_attr($grupo) . '">' . esc_html(ucfirst($grupo)) . '<span class="remove-tag">×</span></span>';
+                                    endforeach;
+                                endif;
+                                ?>
+                            </div>
                             <input type="text" class="custom-input-tag" placeholder="Escribe y presiona Enter" />
                             <div class="custom-options">
                                 <?php
                                 $seleccionados = array_map(fn ($item) => mb_strtolower(trim($item), 'UTF-8'), $necesidades['grupo_social'] ?? []);
-$grupos = values_necesidades_groups();
-foreach ($grupos as $valor):
-    $valor_normalizado = mb_strtolower(trim($valor), 'UTF-8');
-    $clase = in_array($valor_normalizado, $seleccionados) ? 'option disabled' : 'option';
-    echo '<div class="' . esc_attr($clase) . '" data-value="' . esc_attr($valor) . '">' . esc_html(ucfirst($valor)) . '</div>';
-endforeach;
-?>
+                                $grupos = values_necesidades_groups();
+                                foreach ($grupos as $valor):
+                                    $valor_normalizado = mb_strtolower(trim($valor), 'UTF-8');
+                                    $clase = in_array($valor_normalizado, $seleccionados) ? 'option disabled' : 'option';
+                                    echo '<div class="' . esc_attr($clase) . '" data-value="' . esc_attr($valor) . '">' . esc_html(ucfirst($valor)) . '</div>';
+                                endforeach;
+                                ?>
                             </div>
                         </div>
                         <?php

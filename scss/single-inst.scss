@@ -151,7 +151,8 @@
                     justify-content: center;
                     border-radius: 50%;
                     margin-top: -2px;
-                    &:hover{
+
+                    &:hover {
                         background-color: $orange;
                         color: white;
                     }
@@ -170,6 +171,8 @@
                 z-index: 10;
                 max-height: 200px;
                 overflow-y: auto;
+                display: none;
+
                 &.hidden {
                     display: none;
                 }
@@ -177,10 +180,12 @@
                 .option {
                     padding: 8px;
                     cursor: pointer;
-                    &.disabled{
+
+                    &.disabled {
                         color: #999;
                         cursor: not-allowed;
                     }
+
                     &:hover {
                         background: #eee;
                     }
@@ -322,7 +327,7 @@
         }
     }
 
-    button.btn-status{
+    button.btn-status {
         appearance: none;
         border: none;
         font-size: 14px;
@@ -332,12 +337,13 @@
         padding: 10px 20px;
         font-family: $ff-bdcn;
         text-transform: uppercase;
-        &:hover{
+
+        &:hover {
             border-color: white;
             background-color: darken($orange, 5%);
         }
 
-        &:disabled{
+        &:disabled {
             background-color: #999;
         }
     }
@@ -359,8 +365,8 @@
     margin: 40px 0;
 }
 
-.box-admin-password{
-    button{
+.box-admin-password {
+    button {
         appearance: none;
         border: none;
         padding: 10px 20px;
@@ -369,7 +375,8 @@
         font-family: $ff-bdcn;
         text-transform: uppercase;
         cursor: pointer;
-        &:hover{
+
+        &:hover {
             background-color: darken($orange, 5%);
 
         }

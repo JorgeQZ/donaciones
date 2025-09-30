@@ -256,6 +256,7 @@
   z-index: 10;
   max-height: 200px;
   overflow-y: auto;
+  display: none;
 }
 .formulario .row .input-cont .custom-options.hidden {
   display: none;
