@@ -554,9 +554,42 @@ endforeach;
                                         alt="">
                                 </span>
                             </div>
-                            <input type="file" name="fotografias" id="inputFotos" accept="image/*" multiple>
+                            <input type="file" name="fotografias[]" id="inputFotos" accept="image/*" multiple>
                         </div>
-                        <?php mostrar_archivo_existente('fotografias', 'Fotografías', $presentacion_institucional, false); ?>
+
+                        <?php
+                        $post_id = get_the_ID();
+                        $guardadas = (array) get_post_meta($post_id, '_institucion_fotos', true);
+                        $thumbs_guardadas = [];
+
+                        foreach ($guardadas as $aid) {
+                        $aid = (int) $aid;
+                        if ($aid > 0) {
+                            $thumbs_guardadas[] = wp_get_attachment_image_url($aid, 'thumbnail');
+                        }
+                        }
+                        ?>
+
+                        <!-- Vista previa -->
+                        <div id="previewFotos" class="preview-grid"
+                            data-guardadas='<?php echo json_encode(array_values(array_filter($thumbs_guardadas))); ?>'>
+                            <?php if (!empty($thumbs_guardadas)): ?>
+                            <div class="preview-wrap">
+                                <?php foreach ($thumbs_guardadas as $src): ?>
+                                <img src="<?php echo esc_url($src); ?>" alt="" class="preview-thumb">
+                                <?php endforeach; ?>
+                            </div>
+                            <?php else: ?>
+                            <?php endif; ?>
+                        </div>
+
+                        <!-- Procesamiento de fotos -->
+                        <input type="hidden" name="institucion_fotos_submit" value="1">
+                        <?php wp_nonce_field('institucion_fotos_nonce','institucion_fotos_nonce'); ?>
+
+                        <!-- Handler de fotos -->
+                        <input type="hidden" name="submit_institucion" value="1">
+                        <?php wp_nonce_field('registrar_institucion','institucion_nonce'); ?>
                     </div>
                 </div>
             </div>
@@ -970,6 +1003,110 @@ endforeach;
                 btn.textContent = old;
             });
     });
+})();
+</script>
+
+<script>
+(function () {
+  const input    = document.getElementById('inputFotos');
+  const preview  = document.getElementById('previewFotos');
+  const label    = document.getElementById('fileNameFotos');
+  const defaultLabel = label ? label.textContent : 'Arrastra los archivos aquí';
+
+  const originales = (() => {
+    try { return JSON.parse(preview.dataset.guardadas || '[]'); }
+    catch (_) { return []; }
+  })();
+
+  let selected = [];
+
+  function updateLabel() {
+    if (!label) return;
+    if (selected.length === 0) {
+      label.textContent = defaultLabel;
+      return;
+    }
+    const names = selected.map(f => f.name);
+    const maxShow = 3;
+    label.textContent = names.length <= maxShow
+      ? names.join(', ')
+      : names.slice(0, maxShow).join(', ') + ` +${names.length - maxShow} más`;
+  }
+
+  function render() {
+    preview.innerHTML = '';
+
+    const hayNuevas     = selected.length > 0;
+    const hayOriginales = originales.length > 0;
+
+    if (!hayNuevas && !hayOriginales) {
+      preview.innerHTML = '<p class="preview-empty">No hay fotografías cargadas.</p>';
+      return;
+    }
+
+    const wrap = document.createElement('div');
+    wrap.className = 'preview-wrap';
+
+    if (!hayNuevas && hayOriginales) {
+      originales.forEach(src => {
+        const img = document.createElement('img');
+        img.className = 'preview-thumb';
+        img.src = src;
+        wrap.appendChild(img);
+      });
+    }
+
+    if (hayNuevas) {
+      selected.forEach((file, idx) => {
+        if (!file.type || !file.type.startsWith('image/')) return;
+
+        const cell = document.createElement('div');
+        cell.className = 'thumb';
+
+        const url = URL.createObjectURL(file);
+        const img = document.createElement('img');
+        img.className = 'preview-thumb';
+        img.src = url;
+        img.onload = () => URL.revokeObjectURL(url);
+
+        const x = document.createElement('span');
+        x.className = 'thumb-remove';
+        x.textContent = '×';
+        x.title = 'Quitar esta foto';
+        x.addEventListener('click', () => removeAt(idx));
+
+        cell.appendChild(img);
+        cell.appendChild(x);
+        wrap.appendChild(cell);
+      });
+    }
+
+    preview.appendChild(wrap);
+  }
+
+  function syncInput() {
+    const dt = new DataTransfer();
+    selected.forEach(f => dt.items.add(f));
+    input.files = dt.files;
+  }
+
+  function removeAt(index) {
+    selected = selected.filter((_, i) => i !== index);
+    syncInput();
+    updateLabel();
+    render();
+  }
+
+  input.addEventListener('change', () => {
+    Array.from(input.files).forEach(f => selected.push(f));
+    input.value = '';
+    syncInput();
+    updateLabel();
+    render();
+  });
+
+  updateLabel();
+  render();
 })();
 </script>
 

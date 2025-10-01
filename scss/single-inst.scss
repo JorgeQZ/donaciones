@@ -382,3 +382,49 @@
         }
     }
 }
+
+.preview-wrap .thumb {
+    position: relative;
+    display: inline-block;
+}
+
+.preview-wrap .thumb .thumb-remove {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    text-align: center;
+    border-radius: 50%;
+    background: #dc3232;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+}
+
+.preview-grid .preview-title {
+    margin: 10px 0 6px;
+    font-weight: 600
+}
+
+.preview-grid .preview-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 20px;
+}
+
+.preview-grid .preview-thumb {
+    width: 96px;
+    height: 96px;
+    object-fit: cover;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px
+}
+
+.preview-grid .preview-empty {
+    color: #666;
+    margin-top: 8px
+}

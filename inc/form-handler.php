@@ -131,6 +131,8 @@ function thd_handle_institucion_form()
         update_field('archivos_requeridos', $requeridos, $post_id);
     }
 
+    thd_guardar_fotografias_institucion($post_id);
+
     /* =========================
      * USUARIO (login = RFC)
      * ========================= */
@@ -596,7 +598,77 @@ function thd_admin_reset_inst_password()
 
     wp_send_json_success([
         'msg'      => 'Contraseña actualizada correctamente.',
-        'password' => $new_pass, // se devuelve porque solo el admin puede llamar este endpoint
+        'password' => $new_pass,
         'rfc'      => $rfc,
     ]);
+}
+
+/**
+ * Procesa las fotos subidas y reemplaza las existentes
+ */
+function thd_guardar_fotografias_institucion($post_id)
+{
+    if (
+        empty($_POST['institucion_fotos_submit']) ||
+        !isset($_POST['institucion_fotos_nonce']) ||
+        !wp_verify_nonce($_POST['institucion_fotos_nonce'], 'institucion_fotos_nonce')
+    ) {
+        return;
+    }
+
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    if (empty($_FILES['fotografias']) || empty($_FILES['fotografias']['name'])) {
+        return;
+    }
+
+    $old_ids = (array) get_post_meta($post_id, '_institucion_fotos', true);
+    foreach ($old_ids as $aid) {
+        $aid = (int) $aid;
+        if ($aid > 0) {
+            wp_delete_attachment($aid, true);
+        }
+    }
+    delete_post_meta($post_id, '_institucion_fotos');
+
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+    require_once ABSPATH . 'wp-admin/includes/media.php';
+    require_once ABSPATH . 'wp-admin/includes/image.php';
+
+    $files   = $_FILES['fotografias'];
+    $count   = is_array($files['name']) ? count($files['name']) : 0;
+    $new_ids = [];
+
+    for ($i = 0; $i < $count; $i++) {
+        if (empty($files['name'][$i]) || $files['error'][$i] !== UPLOAD_ERR_OK) {
+            continue;
+        }
+
+        $mime = $files['type'][$i] ?? '';
+        if (strpos($mime, 'image/') !== 0) {
+            continue;
+        }
+
+        $tmp_key = 'institucion_foto_tmp';
+        $_FILES[$tmp_key] = [
+            'name'     => $files['name'][$i],
+            'type'     => $files['type'][$i],
+            'tmp_name' => $files['tmp_name'][$i],
+            'error'    => $files['error'][$i],
+            'size'     => $files['size'][$i],
+        ];
+
+        $attach_id = media_handle_upload($tmp_key, $post_id);
+        unset($_FILES[$tmp_key]);
+
+        if (!is_wp_error($attach_id) && $attach_id > 0) {
+            $new_ids[] = (int) $attach_id;
+        }
+    }
+
+    if (!empty($new_ids)) {
+        update_post_meta($post_id, '_institucion_fotos', $new_ids);
+    }
 }

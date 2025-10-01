@@ -263,7 +263,7 @@ if (!function_exists('mostrar_archivo_existente')) {
 if (!function_exists('thd_get_subfield_key')) {
     function thd_get_subfield_key($group_name, $sub_name, $post_id)
     {
-        $group = get_field_object($group_name, $post_id);
+        $group = function_exists('get_field_object') ? get_field_object($group_name, $post_id) : null;
         if (!$group || empty($group['sub_fields'])) {
             return null;
         }
@@ -275,3 +275,128 @@ if (!function_exists('thd_get_subfield_key')) {
         return null;
     }
 }
+
+/**
+ * Metabox: Fotografías de la Institución
+ */
+add_action('add_meta_boxes', function () {
+    add_meta_box(
+        'institucion_fotos_box',
+        'Fotografías de la Institución',
+        'thd_institucion_fotos_metabox_cb',
+        'institucion',
+        'normal',
+        'high'
+    );
+});
+
+/**
+ * Render del metabox
+ */
+function thd_institucion_fotos_metabox_cb($post)
+{
+    $ids = (array) get_post_meta($post->ID, '_institucion_fotos', true);
+    if (empty($ids)) {
+        echo '<p>No hay fotografías cargadas.</p>';
+        return;
+    }
+
+    $file_paths = [];
+    echo '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;">';
+    foreach ($ids as $aid) {
+        $aid = (int) $aid;
+        if ($aid <= 0) continue;
+
+        echo '<div style="text-align:center;">';
+        echo wp_get_attachment_image($aid, 'thumbnail', false, [
+            'style' => 'display:block;width:200px;height:auto;border:1px solid #e5e5e5;border-radius:4px;'
+        ]) ?: '<div style="width:96px;height:200px;background:#eee;border:1px solid #e5e5e5;border-radius:4px;"></div>';
+        echo '</div>';
+
+        $path = get_attached_file($aid);
+        if ($path && file_exists($path)) {
+            $file_paths[] = $path;
+        }
+    }
+    echo '</div>';
+
+    if (empty($file_paths)) {
+        return;
+    }
+
+    if (!class_exists('ZipArchive')) {
+        echo '<p style="margin-top:10px;color:#a00;">ZipArchive no está disponible en el servidor.</p>';
+        return;
+    }
+
+    $uploads = wp_upload_dir();
+    @unlink(trailingslashit($uploads['basedir']) . 'fotos_institucion_' . $post_id . '.zip');
+    $zip_filename = 'fotos_institucion_' . $post->ID . '.zip';
+    $zip_path     = trailingslashit($uploads['basedir']) . $zip_filename;
+    $zip_url      = trailingslashit($uploads['baseurl']) . $zip_filename;
+
+    $zip = new ZipArchive();
+    if ($zip->open($zip_path, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
+        foreach ($file_paths as $path) {
+            $aid = attachment_url_to_postid(wp_get_attachment_url(array_search($path, $file_paths)));
+            $zip->addFile($path, basename($path));
+        }
+        $zip->close();
+
+        echo '<p><a class="button button-primary" href="' . esc_url($zip_url) . '" download>Descargar</a></p>';
+    } else {
+        echo '<p style="margin-top:10px;color:#a00;">No se pudo crear el ZIP.</p>';
+    }
+}
+
+// Metabox dentro del grupo ACF "presentacion_institucional"
+add_action('acf/input/admin_footer', function () {
+    $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+    if (!$screen || $screen->post_type !== 'institucion') return;
+    ?>
+    <style>
+      .acf-field[data-name="fotos_institucion"] .thumbs {
+        display:flex; flex-wrap:wrap; gap:8px; align-items:flex-start; flex-direction: column;
+      }
+      .acf-field[data-name="fotos_institucion"] .thumbs .item {
+        text-align:center;
+      }
+      .acf-field[data-name="fotos_institucion"] .thumbs img {
+        display:block; width:96px; height:auto;
+        border:1px solid #e5e5e5; border-radius:4px;
+      }
+      .acf-field[data-name="fotos_institucion"] .button {
+        margin-top:6px;
+      }
+    </style>
+    <script>
+    jQuery(function ($) {
+      var $groupField = $('.acf-field[data-name="presentacion_institucional"]');
+      if (!$groupField.length) return;
+
+      var $box = $('#institucion_fotos_box');
+      if (!$box.length) return;
+
+      var $content = $box.find('> .inside').children().detach();
+      if (!$content.length) return;
+
+      var $target = $groupField.find('> .acf-input > .acf-fields');
+      if (!$target.length) {
+        $target = $groupField.find('> .acf-input');
+      }
+
+      var $wrap = $(
+        '<div class="acf-field" data-name="fotos_institucion" data-type="message">' +
+          '<div class="acf-label"><label>Fotografías</label></div>' +
+          '<div class="acf-input"><div class="thumbs"></div></div>' +
+        '</div>'
+      );
+
+      $wrap.find('.thumbs').append($content).find('> div').addClass('item');
+      $target.append($wrap);
+
+      $box.hide();
+    });
+    </script>
+    <?php
+});
