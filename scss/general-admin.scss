@@ -1,7 +1,7 @@
 @import "variables";
 @import "fonts"; // Importación del los estilos de fonts a general.
 
-body{
+body {
     margin: 0;
 }
 
@@ -10,6 +10,64 @@ header {
     background-color: $orange;
     font-family: $ff-bdcn !important;
     padding: 15px 80px;
+
+    .desktop {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .contenedor {
+            position: relative;
+
+            &:hover {
+                .dropdown {
+                    display: block;
+                }
+            }
+
+            .contenedor-usuario {
+                display: flex;
+                align-items: center;
+                min-width: 95px;
+                justify-content: space-between;
+
+                .usuario {
+                    margin: 0;
+                    font-size: 18px;
+                    color: white;
+                }
+            }
+
+            .dropdown {
+                display: none;
+                position: absolute;
+                width: 200px;
+                right: 0;
+                transition: all 300ms;
+
+                a {
+                    text-decoration: none;
+                    color: black;
+
+                    &:hover p {
+                        background-color: #e5e5e5;
+                    }
+
+                    p {
+                        margin: 0;
+                        font-size: 18px;
+                        padding: 5px 20px;
+                        height: 40px;
+                        display: flex;
+                        justify-content: flex-end;
+                        align-items: center;
+                        background-color: #f2f2f2;
+                        transition: all 300ms;
+                    }
+                }
+            }
+        }
+    }
 
 
     img {
@@ -74,55 +132,58 @@ footer {
 */
 
 .container {
-   padding: 40px 80px;
-   max-width: 1280px;
-   margin: 0 auto;
+    padding: 40px 80px;
+    max-width: 1280px;
+    margin: 0 auto;
 
-   @media screen and (max-width: 768px) {
+    @media screen and (max-width: 768px) {
         padding: 20px;
     }
 
-   .title-cont{
+    .title-cont {
         display: flex;
         justify-content: space-between;
         color: $orange;
 
-        .title{
+        .title {
             font-family: $ff-hvcn !important;
             font-size: 62px;
             text-transform: uppercase;
         }
 
-        .icons{
+        .icons {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 20px;
 
-           .icon{
+            .icon {
                 width: 20px;
                 height: 20px;
                 margin-bottom: 15px;
                 transition: all 0.3s linear;
-                &:hover{
+
+                &:hover {
                     cursor: pointer;
                     transform: scale(1.1);
                 }
-                img{
+
+                img {
                     transition: all 0.3s linear;
                     width: 100%;
                     height: 100%;
                 }
-           }
+            }
         }
     }
 
-   table{
+    table {
         width: 100%;
         border-collapse: collapse;
         margin-top: 20px;
         font-family: $ff-cn;
-        th{
+
+        th {
             font-family: $ff-hvcn !important;
             background-color: #e5e5e5;
             padding: 10px;
@@ -130,30 +191,34 @@ footer {
             padding-left: 0;
             text-align: left;
             vertical-align: middle;
+
             &:first-child {
                 text-align: center;
             }
+
             border-bottom: 2px solid $orange;
         }
-        tbody{
-            tr{
+
+        tbody {
+            tr {
                 background-color: #e5e5e5;
 
                 &:nth-child(odd) {
                     background-color: #f2f2f2;
                 }
 
-                &:hover{
+                &:hover {
                     background-color: darken(#e5e5e5, 5%);
                     cursor: pointer;
                 }
 
-                td{
+                td {
                     padding: 10px;
                     padding-left: 0;
                     color: black;
                     text-transform: uppercase;
                     transition: all 0.1s linear;
+
                     &:first-child {
                         text-align: right;
                     }
@@ -168,17 +233,18 @@ footer {
                         border-radius: 2px;
                         background-color: white;
                     }
-                    span{
+
+                    span {
                         background: white;
                         color: $orange;
-                        display:inline-block;
-                        padding:10px 20px;
+                        display: inline-block;
+                        padding: 10px 20px;
 
-                        font-weight:600;
+                        font-weight: 600;
                         font-size: 14px;
                     }
 
-                    .btn-reminder{
+                    .btn-reminder {
 
                         appearance: none;
                         border: none;
@@ -189,7 +255,8 @@ footer {
                         font-family: $ff-bdcn;
                         text-transform: uppercase;
                         cursor: pointer;
-                        &:hover{
+
+                        &:hover {
                             background-color: darken($orange, 5%);
                         }
                     }
@@ -198,4 +265,3 @@ footer {
         }
     }
 }
-

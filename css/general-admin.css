@@ -79,6 +79,73 @@ header {
   font-family: "Helvetica Neue LT Std BdCn" !important;
   padding: 15px 80px;
 }
+header .desktop {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+}
+header .desktop .contenedor {
+  position: relative;
+}
+header .desktop .contenedor:hover .dropdown {
+  display: block;
+}
+header .desktop .contenedor .contenedor-usuario {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  min-width: 95px;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+}
+header .desktop .contenedor .contenedor-usuario .usuario {
+  margin: 0;
+  font-size: 18px;
+  color: white;
+}
+header .desktop .contenedor .dropdown {
+  display: none;
+  position: absolute;
+  width: 200px;
+  right: 0;
+  -webkit-transition: all 300ms;
+  transition: all 300ms;
+}
+header .desktop .contenedor .dropdown a {
+  text-decoration: none;
+  color: black;
+}
+header .desktop .contenedor .dropdown a:hover p {
+  background-color: #e5e5e5;
+}
+header .desktop .contenedor .dropdown a p {
+  margin: 0;
+  font-size: 18px;
+  padding: 5px 20px;
+  height: 40px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: end;
+      -ms-flex-pack: end;
+          justify-content: flex-end;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  background-color: #f2f2f2;
+  -webkit-transition: all 300ms;
+  transition: all 300ms;
+}
 header img {
   display: -webkit-box;
   display: -ms-flexbox;
