@@ -16,7 +16,7 @@
             </a>
             <div class="contenedor">
                 <div class="contenedor-usuario">
-                    <p class="usuario">Hola, Javier</p>
+                    <p class="usuario">Hola, <?php echo esc_html( wp_get_current_user()->display_name ); ?></p>
                     <svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M6 9l6 6 6-6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
