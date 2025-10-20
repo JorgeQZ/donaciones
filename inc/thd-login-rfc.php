@@ -48,28 +48,46 @@ if (!function_exists('thd_transient_remaining_secs')) {
         return max(0, $left);
     }
 }
+
+/**
+ * === NUEVO ===
+ * Digest estable con HMAC-SHA256 y salt de WP.
+ * Normaliza propósito y valor para evitar colisiones triviales.
+ */
+if (!function_exists('thd_secure_key')) {
+    function thd_secure_key($purpose, $value)
+    {
+        $data = strtolower(trim((string)$purpose . ':' . (string)$value));
+        return hash_hmac('sha256', $data, wp_salt('auth'));
+    }
+}
+
 if (!function_exists('thd_attempt_key_ip')) {
     function thd_attempt_key_ip()
     {
-        return 'thd_login_ip_'   . md5(thd_get_client_ip());
+        // antes: return 'thd_login_ip_'   . md5(thd_get_client_ip());
+        return 'thd_login_ip_' . thd_secure_key('attempt_ip', thd_get_client_ip());
     }
 }
 if (!function_exists('thd_block_key_ip')) {
     function thd_block_key_ip()
     {
-        return 'thd_block_ip_'  . md5(thd_get_client_ip());
+        // antes: return 'thd_block_ip_'  . md5(thd_get_client_ip());
+        return 'thd_block_ip_' . thd_secure_key('block_ip', thd_get_client_ip());
     }
 }
 if (!function_exists('thd_attempt_key_user')) {
     function thd_attempt_key_user($l)
     {
-        return 'thd_login_user_' . md5($l);
+        // antes: return 'thd_login_user_' . md5($l);
+        return 'thd_login_user_' . thd_secure_key('attempt_user', $l);
     }
 }
 if (!function_exists('thd_block_key_user')) {
     function thd_block_key_user($l)
     {
-        return 'thd_block_user_' . md5($l);
+        // antes: return 'thd_block_user_' . md5($l);
+        return 'thd_block_user_' . thd_secure_key('block_user', $l);
     }
 }
 
