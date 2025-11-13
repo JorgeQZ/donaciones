@@ -1040,7 +1040,7 @@ endforeach;
     const hayOriginales = originales.length > 0;
 
     if (!hayNuevas && !hayOriginales) {
-      preview.innerHTML = '<p class="preview-empty">No hay fotografías cargadas.</p>';
+      preview.innerHTML = '<p class="preview-empty" style="padding: 0px 20px;">No hay fotografías cargadas.</p>';
       return;
     }
 
