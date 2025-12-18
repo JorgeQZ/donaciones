@@ -51,53 +51,189 @@
     font-size: 20px;
 }
 
-.inicio-shortcode {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+// =====================
+// Variables
+// =====================
+$color-border: #ccc;
+$color-primary: #f96302;
+$color-danger: #d32f2f;
 
-    .inputs.dos {
-        margin-top: 50px;
-    }
+$radius: .5rem;
+$pad-input-y: .6rem;
+$pad-input-x: .8rem;
 
-    .inputs {
-        position: relative;
-
-        p {
-            position: absolute;
-            background-color: white;
-            left: 15px;
-            top: -8px;
-            text-align: center;
-            font-family: $ff-ltcn;
-        }
-
-        .input-1 {
-            width: 40px;
-        }
-
-        .input-2 {
-            width: 80px;
-        }
-
-        input {
-            border: solid 1px;
-            width: 270px;
-            height: 40px;
-            padding: 0px 15px;
-
-            &::placeholder {
-                font-size: 11px;
-                font-family: $ff-ltcn;
-            }
-        }
-    }
+// =====================
+// Mixins
+// =====================
+@mixin focus-ring($color: $color-primary) {
+  outline: 2px solid $color;
+  outline-offset: 2px;
 }
 
+// =====================
+// Base
+// =====================
 .boton {
-    font-family: $ff-bdcn;
+  font-family: $ff-bdcn;
 }
 
 .img-hover {
+  width: 100%;
+}
+
+// =====================
+// Inicio shortcode
+// =====================
+.inicio-shortcode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 500px;
+  margin: 0 auto;
+  width: 100%;
+
+  p {
+    font-family: $ff-blkcn;
+    font-size: 30px;
+  }
+
+  form{
     width: 100%;
+  }
+  .inputs {
+    position: relative;
+    margin: 0 auto;
+    margin-bottom: .75rem;
+    max-width: 500px;
+    width: 100%;
+    .thd-input-error{
+      color: #b42318;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+    }
+
+
+    &.dos {
+      margin-top: 5px;
+    }
+
+    p {
+      position: absolute;
+      top: -8px;
+      left: 15px;
+      background-color: #fff;
+      text-align: center;
+      font-family: $ff-ltcn;
+    }
+
+    // .input-1 { width: 40px; }
+    // .input-2 { width: 80px; }
+
+    label{
+        margin-right: auto;
+        width: fit-content;
+        height: 20px;
+        display: block;
+        padding: 5px 10px;
+        margin-left: 20px;
+        background-color: #fff;
+        margin-bottom: -5px;
+        position: relative;
+        z-index: 1;
+    }
+    input {
+      width: 270px;
+      height: 40px;
+      padding: 0 15px;
+      border: 1px solid $color-border;
+      border-radius: $radius;
+
+      &::placeholder {
+        font-size: 11px;
+        font-family: $ff-ltcn;
+      }
+    }
+  }
+
+  input[type="text"],
+  input[type="password"] {
+    width: 100%;
+    padding: $pad-input-y $pad-input-x;
+    border: 1px solid black;
+    border-radius: 0;
+  }
+
+  // Botón principal
+  .thd-btn {
+    display: inline-block;
+    padding: .8rem 1rem;
+    padding-bottom: .4rem;
+    border: 0;
+    cursor: pointer;
+    background-color: $color-primary;
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-family: $ff-bdcn;
+    font-size: 20px;
+
+    &:hover {
+      background-color: darken($color-primary, 5%);
+    }
+  }
+
+  // Mensajes
+  .thd-msg,
+  .thd-msg-lost {
+    color: $color-danger;
+    font-weight: 600;
+  }
+}
+
+#thd-forgot-link, #thd-cancel-lost{
+    color: black;
+    font-size: 12px;
+}
+
+.rem-lost{
+display: flex;
+align-items: center;
+justify-content: space-between;
+}
+// =====================
+// Password eye toggle
+// =====================
+.thd-passwrap {
+  position: relative;
+
+  input[type="password"],
+  input[type="text"] {
+    padding-right: 2.5rem;
+  }
+}
+
+.thd-eye {
+  position: absolute;
+  right: .5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  padding: .25rem;
+  cursor: pointer;
+  line-height: 0;
+  color: #666;
+
+  svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+  }
+
+  &:focus {
+    @include focus-ring();
+  }
 }
